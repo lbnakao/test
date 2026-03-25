@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>廿日市市の天気・花粉情報</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.4rem;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .date {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    #fetch-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #fetch-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+    #fetch-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    #result {
+      margin-top: 30px;
+      text-align: left;
+    }
+    .card {
+      background: #f8f9ff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      color: #667eea;
+      margin-bottom: 12px;
+    }
+    .weather-icon {
+      font-size: 3rem;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .weather-main {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #e8e8f0;
+      font-size: 0.95rem;
+      color: #555;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #888; }
+    .pollen-level {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    .pollen-low { background: #e8f5e9; color: #388e3c; }
+    .pollen-moderate { background: #fff3e0; color: #f57c00; }
+    .pollen-high { background: #fbe9e7; color: #d32f2f; }
+    .pollen-very-high { background: #f8d7da; color: #721c24; }
+    .error { color: #d32f2f; text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>広島県 廿日市市</h1>
+    <div class="date" id="today-date"></div>
+    <button id="fetch-btn">天気・花粉情報を取得</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const LAT = 34.35;
+    const LON = 132.33;
+
+    const today = new Date();
+    document.getElementById('today-date').textContent =
+      `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+
+    const WMO_CODES = {
+      0: ['快晴', '☀️'], 1: ['晴れ', '🌤️'], 2: ['やや曇り', '⛅'],
+      3: ['曇り', '☁️'], 45: ['霧', '🌫️'], 48: ['霧氷', '🌫️'],
+      51: ['小雨', '🌦️'], 53: ['雨', '🌧️'], 55: ['強い雨', '🌧️'],
+      56: ['冷たい霧雨', '🌧️'], 57: ['冷たい霧雨', '🌧️'],
+      61: ['小雨', '🌦️'], 63: ['雨', '🌧️'], 65: ['大雨', '🌧️'],
+      66: ['冷たい雨', '🌧️'], 67: ['冷たい雨', '🌧️'],
+      71: ['小雪', '🌨️'], 73: ['雪', '❄️'], 75: ['大雪', '❄️'],
+      77: ['あられ', '🌨️'], 80: ['にわか雨', '🌦️'], 81: ['にわか雨', '🌧️'],
+      82: ['激しいにわか雨', '⛈️'], 85: ['にわか雪', '🌨️'], 86: ['にわか雪', '❄️'],
+      95: ['雷雨', '⛈️'], 96: ['雹を伴う雷雨', '⛈️'], 99: ['雹を伴う雷雨', '⛈️'],
+    };
+
+    function getPollenLevel(value) {
+      if (value <= 10) return ['少ない', 'pollen-low'];
+      if (value <= 30) return ['やや多い', 'pollen-moderate'];
+      if (value <= 60) return ['多い', 'pollen-high'];
+      return ['非常に多い', 'pollen-very-high'];
+    }
+
+    document.getElementById('fetch-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('fetch-btn');
+      const result = document.getElementById('result');
+      btn.disabled = true;
+      btn.textContent = '取得中...';
+      result.innerHTML = '';
+
+      try {
+        const todayStr = today.toISOString().slice(0, 10);
+
+        const [weatherRes, pollenRes] = await Promise.all([
+          fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,winddirection_10m_dominant&current_weather=true&timezone=Asia%2FTokyo`),
+          fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=Asia%2FTokyo&start_date=${todayStr}&end_date=${todayStr}`)
+        ]);
+
+        const weather = await weatherRes.json();
+        const pollen = await pollenRes.json();
+
+        const current = weather.current_weather;
+        const daily = weather.daily;
+        const wmo = WMO_CODES[current.weathercode] || ['不明', '❓'];
+
+        // 花粉データ（時間帯の平均を取る）
+        const avg = (arr) => {
+          const valid = (arr || []).filter(v => v !== null && v !== undefined);
+          return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+        };
+
+        const h = pollen.hourly || {};
+        const pollenTypes = [
+          { name: 'ハンノキ', values: h.alder_pollen },
+          { name: 'カバノキ', values: h.birch_pollen },
+          { name: 'イネ科', values: h.grass_pollen },
+          { name: 'ヨモギ', values: h.mugwort_pollen },
+          { name: 'オリーブ', values: h.olive_pollen },
+          { name: 'ブタクサ', values: h.ragweed_pollen },
+        ];
+
+        const totalPollen = pollenTypes.reduce((sum, p) => sum + avg(p.values), 0);
+        const [totalLevel, totalClass] = getPollenLevel(totalPollen);
+
+        let html = `
+          <div class="card">
+            <h2>🌤 天気</h2>
+            <div class="weather-icon">${wmo[1]}</div>
+            <div class="weather-main">${wmo[0]}</div>
+            <div class="detail-row">
+              <span class="detail-label">現在の気温</span>
+              <span>${current.temperature}°C</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">最高気温</span>
+              <span>${daily.temperature_2m_max[0]}°C</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">最低気温</span>
+              <span>${daily.temperature_2m_min[0]}°C</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">降水量</span>
+              <span>${daily.precipitation_sum[0]} mm</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">最大風速</span>
+              <span>${daily.windspeed_10m_max[0]} km/h</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>🌿 花粉情報</h2>
+            <div class="detail-row">
+              <span class="detail-label">総合レベル</span>
+              <span class="pollen-level ${totalClass}">${totalLevel}</span>
+            </div>`;
+
+        for (const p of pollenTypes) {
+          const val = avg(p.values);
+          const [level, cls] = getPollenLevel(val);
+          html += `
+            <div class="detail-row">
+              <span class="detail-label">${p.name}</span>
+              <span class="pollen-level ${cls}">${level} (${val.toFixed(1)})</span>
+            </div>`;
+        }
+
+        html += `</div>`;
+        result.innerHTML = html;
+
+      } catch (e) {
+        result.innerHTML = `<p class="error">データの取得に失敗しました。<br>${e.message}</p>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '天気・花粉情報を取得';
+      }
+    });
+  </script>
+</body>
+</html>
