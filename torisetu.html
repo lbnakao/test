@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>じぶんのトリセツ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #667eea;
+      --primary-dark: #5563c1;
+      --gradient: linear-gradient(135deg, #667eea, #764ba2);
+      --bg: #f0f2f5;
+      --card: #fff;
+      --text: #1a1a2e;
+      --text-sub: #666;
+      --border: #e0e0e0;
+      --radius: 14px;
+    }
+    body {
+      font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    /* ===== SETUP OVERLAY ===== */
+    #setup-overlay {
+      position: fixed; inset: 0;
+      background: var(--gradient);
+      z-index: 1000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    #setup-overlay.hidden { display: none; }
+    .setup-card {
+      background: rgba(255,255,255,0.97);
+      border-radius: 20px;
+      padding: 32px 24px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .setup-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .setup-card p {
+      color: var(--text-sub);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+    .setup-step { display: none; }
+    .setup-step.active { display: block; }
+
+    /* Category cards */
+    .category-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .category-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .category-card:hover, .category-card.selected {
+      border-color: var(--primary);
+      background: #f0f0ff;
+    }
+    .category-card .icon { font-size: 2rem; margin-bottom: 6px; }
+    .category-card .label { font-size: 0.9rem; font-weight: 600; }
+
+    /* Sub-input for category */
+    .sub-input {
+      display: none;
+      margin-top: 12px;
+    }
+    .sub-input.visible { display: block; }
+    .sub-input input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 15px;
+      outline: none;
+    }
+    .sub-input input:focus { border-color: var(--primary); }
+
+    /* Personality / relationship cards */
+    .personality-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .p-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .p-card:hover, .p-card.selected {
+      border-color: var(--primary);
+      background: #f0f0ff;
+    }
+    .p-card .icon { font-size: 1.6rem; }
+    .p-card .label { font-size: 0.85rem; font-weight: 600; margin-top: 4px; }
+
+    .rel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    /* Chat UI */
+    .chat-area {
+      max-height: 320px;
+      overflow-y: auto;
+      text-align: left;
+      margin-bottom: 12px;
+      padding: 8px 0;
+    }
+    .chat-msg {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: flex-start;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .chat-bubble {
+      background: var(--bg);
+      border-radius: 14px 14px 14px 4px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      font-size: 15px;
+      outline: none;
+    }
+    .chat-input-row input:focus { border-color: var(--primary); }
+    .chat-input-row button, .skip-btn {
+      padding: 10px 18px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .skip-btn {
+      background: transparent;
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--gradient);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin-top: 12px;
+    }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ===== MAIN APP ===== */
+    #app { display: none; padding-bottom: 70px; }
+    #app.visible { display: block; }
+
+    /* Tab content */
+    .tab-content { display: none; padding: 16px; }
+    .tab-content.active { display: block; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      display: flex;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1;
+      padding: 8px 0 6px;
+      text-align: center;
+      cursor: pointer;
+      color: #999;
+      font-size: 10px;
+      transition: color 0.2s;
+      border: none;
+      background: none;
+    }
+    .nav-item .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+    .nav-item.active { color: var(--primary); font-weight: 600; }
+
+    /* Common card */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .card h3 {
+      font-size: 0.95rem;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+
+    /* Section title */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    /* Coach avatar large */
+    .coach-avatar-lg {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 12px;
+    }
+
+    /* Placeholder content */
+    .placeholder {
+      text-align: center;
+      color: #bbb;
+      padding: 40px 16px;
+      font-size: 0.95rem;
+    }
+
+    /* ===== LOG TAB ===== */
+    .mood-row {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;
+    }
+    .mood-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 2px solid var(--border); background: #fff;
+      font-size: 24px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mood-btn.selected { border-color: var(--primary); background: #f0f0ff; transform: scale(1.15); }
+
+    .energy-row {
+      display: flex; gap: 6px; margin-bottom: 16px;
+    }
+    .energy-bar {
+      flex: 1; height: 32px; border-radius: 8px;
+      border: 2px solid var(--border); background: #fff;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: var(--text-sub);
+    }
+    .energy-bar.selected { border-color: var(--primary); color: #fff; }
+    .energy-bar.selected:nth-child(1) { background: #e74c3c; }
+    .energy-bar.selected:nth-child(2) { background: #e67e22; }
+    .energy-bar.selected:nth-child(3) { background: #f1c40f; }
+    .energy-bar.selected:nth-child(4) { background: #2ecc71; }
+    .energy-bar.selected:nth-child(5) { background: #27ae60; }
+
+    .weather-info {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px; background: var(--bg); border-radius: 10px;
+      font-size: 0.9rem; color: var(--text-sub);
+    }
+    .weather-info .w-icon { font-size: 2rem; }
+
+    /* Activity form */
+    .activity-item {
+      background: var(--bg); border-radius: 10px;
+      padding: 12px; margin-bottom: 8px;
+    }
+    .activity-item select, .activity-item input, .activity-item textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; margin-bottom: 6px;
+      font-family: inherit; outline: none;
+    }
+    .activity-item select:focus, .activity-item input:focus, .activity-item textarea:focus {
+      border-color: var(--primary);
+    }
+    .star-row { display: flex; gap: 4px; margin-bottom: 6px; }
+    .star-btn {
+      font-size: 22px; cursor: pointer; background: none; border: none;
+      color: #ddd; transition: color 0.15s;
+    }
+    .star-btn.on { color: #f1c40f; }
+
+    .add-activity-btn {
+      width: 100%; padding: 10px; border: 2px dashed var(--border);
+      border-radius: 10px; background: transparent; cursor: pointer;
+      color: var(--text-sub); font-size: 14px;
+    }
+
+    .event-toggle {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px; font-size: 0.9rem;
+    }
+    .event-toggle input[type=checkbox] { width: 18px; height: 18px; }
+
+    .event-fields { display: none; }
+    .event-fields.visible { display: block; }
+
+    /* Streak badge */
+    .streak-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--gradient); color: #fff;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 0.85rem; font-weight: 600;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%); background: #333;
+      color: #fff; padding: 10px 24px; border-radius: 20px;
+      font-size: 0.9rem; z-index: 200;
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 1.5s forwards;
+    }
+    @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes toastOut { to { opacity:0; transform:translateX(-50%) translateY(-10px); } }
+
+    /* ===== ANALYSIS TAB ===== */
+    .filter-row {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .filter-btn {
+      flex: 1; padding: 8px; border: 2px solid var(--border);
+      border-radius: 20px; background: #fff; font-size: 13px;
+      cursor: pointer; color: var(--text-sub); transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: var(--primary); border-color: var(--primary);
+      color: #fff; font-weight: 600;
+    }
+    .chart-bar {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .chart-bar .label { width: 60px; font-size: 0.8rem; color: var(--text-sub); text-align: right; }
+    .chart-bar .bar {
+      height: 20px; border-radius: 10px;
+      background: var(--gradient); transition: width 0.4s ease;
+      min-width: 4px;
+    }
+    .chart-bar .val { font-size: 0.8rem; color: var(--text-sub); }
+
+    .heatmap-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    }
+    .heatmap-cell {
+      aspect-ratio: 1; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; color: #fff; font-weight: 600;
+    }
+
+    /* ===== COACH TAB ===== */
+    .goal-item {
+      background: var(--bg); border-radius: 10px;
+      padding: 12px; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .goal-item .goal-title { font-weight: 600; font-size: 0.9rem; }
+    .goal-item .goal-date { font-size: 0.8rem; color: var(--text-sub); }
+    .goal-item .goal-countdown {
+      background: var(--gradient); color: #fff;
+      padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== SETUP OVERLAY ===== -->
+<div id="setup-overlay">
+  <div class="setup-card">
+
+    <!-- Step 1: Category -->
+    <div class="setup-step active" id="step-category">
+      <h2>じぶんのトリセツ</h2>
+      <p>まずはどんな目的で使いますか？</p>
+      <div class="category-grid">
+        <div class="category-card" data-cat="勉強" onclick="selectCategory(this)">
+          <div class="icon">📚</div>
+          <div class="label">勉強</div>
+        </div>
+        <div class="category-card" data-cat="仕事" onclick="selectCategory(this)">
+          <div class="icon">💼</div>
+          <div class="label">仕事</div>
+        </div>
+        <div class="category-card" data-cat="趣味" onclick="selectCategory(this)">
+          <div class="icon">🏌️</div>
+          <div class="label">趣味・スポーツ</div>
+        </div>
+        <div class="category-card" data-cat="メンタルヘルス" onclick="selectCategory(this)">
+          <div class="icon">🧘</div>
+          <div class="label">メンタルヘルス</div>
+        </div>
+      </div>
+      <div class="sub-input" id="sub-input-area">
+        <input id="sub-input" type="text" placeholder="具体的に何をしていますか？（例: ゴルフ、英語）">
+      </div>
+      <button class="btn-primary" id="btn-step1" disabled onclick="goToStep(2)">次へ</button>
+    </div>
+
+    <!-- Step 2: Coach Character Make -->
+    <div class="setup-step" id="step-coach">
+      <h2>コーチのキャラメイク</h2>
+      <p>あなたを応援するコーチを作ろう！</p>
+
+      <div class="section-title" style="text-align:left;font-size:0.9rem;">性格タイプ</div>
+      <div class="personality-grid" id="personality-grid">
+        <div class="p-card" data-val="情熱的" onclick="selectPersonality(this)">
+          <div class="icon">🔥</div>
+          <div class="label">情熱的</div>
+        </div>
+        <div class="p-card" data-val="丁寧" onclick="selectPersonality(this)">
+          <div class="icon">🌸</div>
+          <div class="label">丁寧</div>
+        </div>
+        <div class="p-card" data-val="クール" onclick="selectPersonality(this)">
+          <div class="icon">❄️</div>
+          <div class="label">クール</div>
+        </div>
+        <div class="p-card" data-val="かわいい" onclick="selectPersonality(this)">
+          <div class="icon">🐱</div>
+          <div class="label">かわいい</div>
+        </div>
+      </div>
+
+      <div class="section-title" style="text-align:left;font-size:0.9rem;">関係性</div>
+      <div class="rel-grid" id="rel-grid">
+        <div class="p-card" data-val="年上" onclick="selectRelationship(this)">
+          <div class="icon">👤</div>
+          <div class="label">年上</div>
+        </div>
+        <div class="p-card" data-val="友達" onclick="selectRelationship(this)">
+          <div class="icon">🤝</div>
+          <div class="label">友達</div>
+        </div>
+        <div class="p-card" data-val="年下" onclick="selectRelationship(this)">
+          <div class="icon">🙋</div>
+          <div class="label">年下</div>
+        </div>
+      </div>
+
+      <div class="sub-input visible">
+        <input id="coach-custom" type="text" placeholder="詳細（任意）: 一人称や口調など">
+      </div>
+      <button class="btn-primary" id="btn-step2" disabled onclick="goToStep(3)">次へ</button>
+    </div>
+
+    <!-- Step 3: Chat with Coach -->
+    <div class="setup-step" id="step-chat">
+      <div class="coach-avatar-lg" id="chat-coach-avatar"></div>
+      <div class="chat-area" id="chat-area"></div>
+      <div id="chat-input-container"></div>
+    </div>
+
+    <!-- Step 4: Location -->
+    <div class="setup-step" id="step-location">
+      <div class="coach-avatar-lg" id="loc-coach-avatar"></div>
+      <h2 id="loc-msg"></h2>
+      <p style="margin-top:8px">天気データと連動して、あなたのコンディション傾向を分析できるようになります。</p>
+      <button class="btn-primary" onclick="requestLocation()">位置情報を許可する</button>
+      <button class="skip-btn" onclick="skipLocation()">あとで設定する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app">
+  <div id="tab-home" class="tab-content active"></div>
+  <div id="tab-log" class="tab-content"></div>
+  <div id="tab-analysis" class="tab-content"></div>
+  <div id="tab-coach" class="tab-content"></div>
+  <div id="tab-community" class="tab-content"></div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('home', this)">
+      <span class="nav-icon">🏠</span>ホーム
+    </button>
+    <button class="nav-item" onclick="switchTab('log', this)">
+      <span class="nav-icon">📝</span>ログ
+    </button>
+    <button class="nav-item" onclick="switchTab('analysis', this)">
+      <span class="nav-icon">📊</span>分析
+    </button>
+    <button class="nav-item" onclick="switchTab('coach', this)">
+      <span class="nav-icon">🎯</span>コーチ
+    </button>
+    <button class="nav-item" onclick="switchTab('community', this)">
+      <span class="nav-icon">👥</span>仲間
+    </button>
+  </nav>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+const STORAGE = {
+  profile: 'torisetu_profile',
+  logs: 'torisetu_logs',
+  goals: 'torisetu_goals',
+  categories: 'torisetu_categories',
+  settings: 'torisetu_settings',
+  geminiKey: 'torisetu_gemini_key',
+  analysisCache: 'torisetu_analysis_cache',
+  coachingCache: 'torisetu_coaching_cache'
+};
+
+const COACH_VOICES = {
+  '情熱的_年上': { pronoun: '俺', call: (n) => n, greeting: 'よう！', suffix: 'ぜ！', emoji: '🔥' },
+  '情熱的_友達': { pronoun: '俺', call: (n) => n, greeting: 'おっ！', suffix: 'ぜ！', emoji: '🔥' },
+  '情熱的_年下': { pronoun: '僕', call: (n) => n+'さん', greeting: 'はじめまして！', suffix: 'です！', emoji: '🔥' },
+  '丁寧_年上': { pronoun: '私', call: (n) => n+'さん', greeting: 'はじめまして。', suffix: 'ですね。', emoji: '🌸' },
+  '丁寧_友達': { pronoun: '私', call: (n) => n+'さん', greeting: 'はじめまして！', suffix: 'ですね。', emoji: '🌸' },
+  '丁寧_年下': { pronoun: '私', call: (n) => n+'さん', greeting: 'はじめまして！', suffix: 'です。', emoji: '🌸' },
+  'クール_年上': { pronoun: '俺', call: (n) => n, greeting: '…よう。', suffix: 'だ。', emoji: '❄️' },
+  'クール_友達': { pronoun: '自分', call: (n) => n, greeting: 'やあ。', suffix: 'だね。', emoji: '❄️' },
+  'クール_年下': { pronoun: '僕', call: (n) => n+'さん', greeting: '…どうも。', suffix: 'ですね。', emoji: '❄️' },
+  'かわいい_年上': { pronoun: 'あたし', call: (n) => n+'ちゃん', greeting: 'やっほー！', suffix: 'だよ～♪', emoji: '🐱' },
+  'かわいい_友達': { pronoun: 'わたし', call: (n) => n+'！', greeting: 'はじめまして～！', suffix: 'だよ♪', emoji: '🐱' },
+  'かわいい_年下': { pronoun: 'わたし', call: (n) => n+'さんっ', greeting: 'はじめましてっ！', suffix: 'です♪', emoji: '🐱' }
+};
+
+const AVATAR_COLORS = {
+  '情熱的': '#e74c3c', '丁寧': '#e91e8f', 'クール': '#3498db', 'かわいい': '#ff6b9d'
+};
+
+const DEFAULT_CATEGORIES = {
+  '勉強': ['自習', 'テスト', '授業'],
+  '仕事': ['業務', '会議', '営業'],
+  '趣味': ['練習', '本番', 'トレーニング'],
+  'メンタルヘルス': ['リラックス', '運動', '趣味']
+};
+
+// ===== DATA LAYER =====
+function loadData(key) {
+  try { return JSON.parse(localStorage.getItem(key)); }
+  catch { return null; }
+}
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== SETUP STATE =====
+let setupState = { category: '', subDetail: '', personality: '', relationship: '', userName: '', coachName: '', idol: null };
+
+function selectCategory(el) {
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  setupState.category = el.dataset.cat;
+  document.getElementById('sub-input-area').classList.add('visible');
+  const placeholders = {
+    '勉強': '例: 数学、英語、受験勉強',
+    '仕事': '例: 営業、プログラミング、企画',
+    '趣味': '例: ゴルフ、ギター、ランニング',
+    'メンタルヘルス': '例: 瞑想、散歩、日記'
+  };
+  document.getElementById('sub-input').placeholder = placeholders[setupState.category] || '';
+  document.getElementById('btn-step1').disabled = false;
+}
+
+function selectPersonality(el) {
+  document.querySelectorAll('#personality-grid .p-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  setupState.personality = el.dataset.val;
+  checkStep2Ready();
+}
+
+function selectRelationship(el) {
+  document.querySelectorAll('#rel-grid .p-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  setupState.relationship = el.dataset.val;
+  checkStep2Ready();
+}
+
+function checkStep2Ready() {
+  document.getElementById('btn-step2').disabled = !(setupState.personality && setupState.relationship);
+}
+
+function getVoice() {
+  return COACH_VOICES[setupState.personality + '_' + setupState.relationship] || COACH_VOICES['丁寧_友達'];
+}
+
+function getAvatarColor() {
+  return AVATAR_COLORS[setupState.personality] || '#667eea';
+}
+
+function makeAvatarHtml(size) {
+  const color = getAvatarColor();
+  const v = getVoice();
+  const s = size || 36;
+  const fs = Math.round(s * 0.5);
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${fs}px;flex-shrink:0">${v.emoji}</div>`;
+}
+
+// ===== SETUP STEPS =====
+function goToStep(n) {
+  document.querySelectorAll('.setup-step').forEach(s => s.classList.remove('active'));
+  if (n === 2) {
+    setupState.subDetail = document.getElementById('sub-input').value.trim();
+    document.getElementById('step-coach').classList.add('active');
+  } else if (n === 3) {
+    setupState.customDetail = document.getElementById('coach-custom').value.trim();
+    document.getElementById('step-chat').classList.add('active');
+    startChat();
+  } else if (n === 4) {
+    document.getElementById('step-location').classList.add('active');
+    const v = getVoice();
+    document.getElementById('loc-coach-avatar').innerHTML = makeAvatarHtml(64).replace('<div', '<div id="_lca"');
+    document.getElementById('loc-coach-avatar').outerHTML = makeAvatarHtml(64);
+    const locAvatar = document.getElementById('step-location').querySelector('.coach-avatar-lg');
+    locAvatar.innerHTML = getVoice().emoji;
+    locAvatar.style.background = getAvatarColor();
+    document.getElementById('loc-msg').textContent = `天気も記録すると面白い${setupState.relationship === '年上' ? 'ぞ' : 'よ'}！`;
+  }
+}
+
+// ===== CHAT FLOW =====
+let chatStep = 0;
+
+function addChatMsg(text, isCoach) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  if (isCoach) {
+    div.innerHTML = `${makeAvatarHtml(36)}<div class="chat-bubble">${escHtml(text)}</div>`;
+  } else {
+    div.innerHTML = `<div class="chat-bubble" style="margin-left:auto;background:#667eea;color:#fff;border-radius:14px 14px 4px 14px;">${escHtml(text)}</div>`;
+  }
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showChatInput(placeholder, onSubmit, showSkip) {
+  const container = document.getElementById('chat-input-container');
+  container.innerHTML = `
+    <div class="chat-input-row">
+      <input type="text" id="chat-text" placeholder="${escHtml(placeholder)}" maxlength="30">
+      <button onclick="submitChatInput()">送信</button>
+    </div>
+    ${showSkip ? '<button class="skip-btn" onclick="skipChatInput()">スキップ</button>' : ''}
+  `;
+  container._onSubmit = onSubmit;
+  container._onSkip = showSkip ? () => { container.innerHTML = ''; chatFlow(null); } : null;
+  const inp = document.getElementById('chat-text');
+  inp.focus();
+  inp.addEventListener('keypress', e => { if (e.key === 'Enter') submitChatInput(); });
+}
+
+function submitChatInput() {
+  const inp = document.getElementById('chat-text');
+  const val = inp.value.trim();
+  if (!val) return;
+  const container = document.getElementById('chat-input-container');
+  const cb = container._onSubmit;
+  container.innerHTML = '';
+  addChatMsg(val, false);
+  if (cb) cb(val);
+}
+
+function skipChatInput() {
+  const container = document.getElementById('chat-input-container');
+  const cb = container._onSkip;
+  container.innerHTML = '';
+  if (cb) cb();
+}
+
+function startChat() {
+  const avatar = document.getElementById('chat-coach-avatar');
+  avatar.innerHTML = getVoice().emoji;
+  avatar.style.background = getAvatarColor();
+  chatStep = 0;
+  chatFlow(null);
+}
+
+function chatFlow(input) {
+  const v = getVoice();
+  const step = chatStep++;
+
+  if (step === 0) {
+    setTimeout(() => {
+      addChatMsg(v.greeting + ' あなたのお名前を教えてくれる？', true);
+      showChatInput('あなたの名前', (val) => { setupState.userName = val; chatFlow(val); });
+    }, 400);
+  } else if (step === 1) {
+    setTimeout(() => {
+      addChatMsg(`${v.call(setupState.userName)}！よろしく${v.suffix.replace('！','').replace('ぜ','な').replace('だ','だ').replace('です','ね')}！`, true);
+      setTimeout(() => {
+        addChatMsg(`ところで、${v.pronoun}の名前をつけてくれない？`, true);
+        showChatInput('コーチの名前', (val) => { setupState.coachName = val; chatFlow(val); });
+      }, 800);
+    }, 500);
+  } else if (step === 2) {
+    setTimeout(() => {
+      addChatMsg(`${setupState.coachName}かぁ！いい名前${v.suffix}`, true);
+      setTimeout(() => {
+        addChatMsg(`${v.call(setupState.userName)}って、推しとかいる？尊敬する人とか憧れの人！`, true);
+        showChatInput('推し・尊敬する人', (val) => { setupState.idol = val; chatFlow(val); }, true);
+      }, 800);
+    }, 500);
+  } else if (step === 3) {
+    if (input) {
+      setTimeout(() => {
+        addChatMsg(`あー${input}か！いいね${v.suffix}`, true);
+        setTimeout(() => finishChat(), 800);
+      }, 500);
+    } else {
+      finishChat();
+    }
+  }
+}
+
+function finishChat() {
+  const v = getVoice();
+  setTimeout(() => {
+    addChatMsg(`じゃあ${v.call(setupState.userName)}、一緒に頑張っていこう！`, true);
+    const container = document.getElementById('chat-input-container');
+    container.innerHTML = '<button class="btn-primary" onclick="goToStep(4)">はじめる！</button>';
+  }, 500);
+}
+
+// ===== LOCATION =====
+function requestLocation() {
+  if (!navigator.geolocation) { skipLocation(); return; }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      saveData(STORAGE.settings, {
+        location: { lat: pos.coords.latitude, lon: pos.coords.longitude, name: '' },
+        interests: setupState.idol ? [setupState.idol] : [],
+        events: []
+      });
+      completeSetup();
+    },
+    () => { skipLocation(); }
+  );
+}
+
+function skipLocation() {
+  saveData(STORAGE.settings, {
+    location: { lat: 34.35, lon: 132.33, name: '廿日市市' },
+    interests: setupState.idol ? [setupState.idol] : [],
+    events: []
+  });
+  completeSetup();
+}
+
+function completeSetup() {
+  const profile = {
+    name: setupState.userName,
+    category: setupState.category,
+    mainActivity: setupState.subDetail || setupState.category,
+    coach: {
+      name: setupState.coachName,
+      personality: setupState.personality,
+      relationship: setupState.relationship,
+      customDetail: setupState.customDetail || '',
+      avatarColor: getAvatarColor()
+    },
+    idol: setupState.idol ? { name: setupState.idol } : null,
+    setupCompleted: true
+  };
+  saveData(STORAGE.profile, profile);
+  saveData(STORAGE.categories, DEFAULT_CATEGORIES[setupState.category] || ['活動1', '活動2']);
+  document.getElementById('setup-overlay').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  renderHome();
+}
+
+// ===== TAB NAVIGATION =====
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'log') renderLog();
+  if (name === 'home') renderHome();
+  if (name === 'analysis') renderAnalysis();
+  if (name === 'coach') renderCoach();
+  if (name === 'community') renderCommunity();
+}
+
+// ===== WEATHER SERVICE =====
+const WMO_CODES = {
+  0:['快晴','☀️'],1:['晴れ','🌤️'],2:['やや曇り','⛅'],3:['曇り','☁️'],
+  45:['霧','🌫️'],48:['霧氷','🌫️'],51:['小雨','🌦️'],53:['雨','🌧️'],55:['強い雨','🌧️'],
+  61:['小雨','🌦️'],63:['雨','🌧️'],65:['大雨','🌧️'],71:['小雪','🌨️'],73:['雪','❄️'],
+  75:['大雪','❄️'],80:['にわか雨','🌦️'],81:['にわか雨','🌧️'],
+  95:['雷雨','⛈️'],96:['雹を伴う雷雨','⛈️'],99:['雹を伴う雷雨','⛈️']
+};
+
+let cachedWeather = null;
+let weatherCacheTime = 0;
+
+async function fetchWeather() {
+  if (cachedWeather && Date.now() - weatherCacheTime < 30*60*1000) return cachedWeather;
+  const settings = loadData(STORAGE.settings) || { location: { lat: 34.35, lon: 132.33 } };
+  const { lat, lon } = settings.location;
+  try {
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relativehumidity_2m,temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=7`);
+    const data = await res.json();
+    const cur = data.current_weather;
+    const hour = new Date().getHours();
+    const humidity = data.hourly?.relativehumidity_2m?.[hour] ?? null;
+    const wmo = WMO_CODES[cur.weathercode] || ['不明','❓'];
+    cachedWeather = {
+      temperature: cur.temperature,
+      humidity: humidity,
+      condition: wmo[0],
+      conditionCode: cur.weathercode,
+      icon: wmo[1],
+      daily: data.daily
+    };
+    weatherCacheTime = Date.now();
+    return cachedWeather;
+  } catch(e) {
+    return null;
+  }
+}
+
+// ===== LOG TAB =====
+let logState = { mood: 0, energy: 0, activities: [], isEvent: false, weather: null };
+
+function renderLog() {
+  const profile = loadData(STORAGE.profile);
+  const categories = loadData(STORAGE.categories) || ['活動'];
+  const today = new Date().toISOString().slice(0,10);
+  const existingLogs = loadData(STORAGE.logs) || [];
+  const todayLog = existingLogs.find(l => l.date === today);
+
+  if (todayLog) {
+    logState.mood = todayLog.mood;
+    logState.energy = todayLog.energy;
+    logState.activities = todayLog.activities || [];
+    logState.isEvent = todayLog.isEvent || false;
+  } else if (logState.activities.length === 0) {
+    logState.activities = [{ id: Date.now(), category: categories[0], performance: 0, duration: '', quantity: '', notes: '' }];
+  }
+
+  const tab = document.getElementById('tab-log');
+  tab.innerHTML = `
+    <div class="section-title">📝 ${today.replace(/-/g,'/')} のログ</div>
+    <div class="card">
+      <h3>気分</h3>
+      <div class="mood-row">
+        ${['😫','😟','😐','😊','🤩'].map((e,i) =>
+          `<button class="mood-btn ${logState.mood===i+1?'selected':''}" onclick="setMood(${i+1})">${e}</button>`
+        ).join('')}
+      </div>
+      <h3>エネルギー</h3>
+      <div class="energy-row">
+        ${[1,2,3,4,5].map(i =>
+          `<div class="energy-bar ${logState.energy===i?'selected':''}" onclick="setEnergy(${i})">${i}</div>`
+        ).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h3>🌤 天気</h3>
+      <div id="weather-display" class="weather-info">
+        <span>読み込み中...</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📋 活動記録</h3>
+      <div id="activities-area"></div>
+      <button class="add-activity-btn" onclick="addActivity()">＋ 活動を追加</button>
+    </div>
+    <div class="card">
+      <div class="event-toggle">
+        <input type="checkbox" id="is-event" ${logState.isEvent?'checked':''} onchange="toggleEvent(this.checked)">
+        <label for="is-event"><strong>これは本番の記録</strong></label>
+      </div>
+      <div class="event-fields ${logState.isEvent?'visible':''}" id="event-fields">
+        <input type="text" id="event-result" placeholder="結果（例: スコア92、80点）" value="${todayLog?.eventResult||''}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:8px;">
+        <textarea id="event-memo" placeholder="本番のメモ" rows="2" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;">${todayLog?.eventMemo||''}</textarea>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveLog()">保存する</button>
+  `;
+  renderActivities();
+  loadWeatherDisplay();
+}
+
+function renderActivities() {
+  const categories = loadData(STORAGE.categories) || ['活動'];
+  const area = document.getElementById('activities-area');
+  if (!area) return;
+  area.innerHTML = logState.activities.map((a, idx) => `
+    <div class="activity-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <select onchange="logState.activities[${idx}].category=this.value">
+          ${categories.map(c => `<option ${a.category===c?'selected':''}>${escHtml(c)}</option>`).join('')}
+        </select>
+        ${logState.activities.length > 1 ? `<button onclick="removeActivity(${idx})" style="background:none;border:none;color:#e53935;font-size:18px;cursor:pointer;">×</button>` : ''}
+      </div>
+      <div style="font-size:0.85rem;color:var(--text-sub);margin-bottom:4px;">パフォーマンス</div>
+      <div class="star-row">
+        ${[1,2,3,4,5].map(s => `<button class="star-btn ${a.performance>=s?'on':''}" onclick="setPerf(${idx},${s})">★</button>`).join('')}
+      </div>
+      <input type="text" placeholder="数値メモ（例: 200球、60分）" value="${escHtml(a.quantity||'')}" onchange="logState.activities[${idx}].quantity=this.value">
+      <textarea placeholder="メモ" rows="2" onchange="logState.activities[${idx}].notes=this.value">${escHtml(a.notes||'')}</textarea>
+    </div>
+  `).join('');
+}
+
+function setMood(n) { logState.mood = n; renderLog(); }
+function setEnergy(n) { logState.energy = n; renderLog(); }
+function setPerf(idx, val) { logState.activities[idx].performance = val; renderActivities(); }
+function addActivity() {
+  const categories = loadData(STORAGE.categories) || ['活動'];
+  logState.activities.push({ id: Date.now(), category: categories[0], performance: 0, duration: '', quantity: '', notes: '' });
+  renderActivities();
+}
+function removeActivity(idx) { logState.activities.splice(idx, 1); renderActivities(); }
+function toggleEvent(checked) {
+  logState.isEvent = checked;
+  const f = document.getElementById('event-fields');
+  if (f) f.classList.toggle('visible', checked);
+}
+
+async function loadWeatherDisplay() {
+  const w = await fetchWeather();
+  const el = document.getElementById('weather-display');
+  if (!el) return;
+  if (!w) { el.innerHTML = '<span>天気を取得できませんでした</span>'; return; }
+  logState.weather = w;
+  el.innerHTML = `
+    <span class="w-icon">${w.icon}</span>
+    <div>
+      <div><strong>${w.condition}</strong> ${w.temperature}°C</div>
+      ${w.humidity !== null ? `<div style="font-size:0.8rem;">湿度: ${w.humidity}%</div>` : ''}
+    </div>
+  `;
+}
+
+function saveLog() {
+  const today = new Date().toISOString().slice(0,10);
+  const logs = loadData(STORAGE.logs) || [];
+  const idx = logs.findIndex(l => l.date === today);
+  const entry = {
+    id: idx >= 0 ? logs[idx].id : Date.now(),
+    date: today,
+    mood: logState.mood,
+    energy: logState.energy,
+    weather: logState.weather ? {
+      temperature: logState.weather.temperature,
+      humidity: logState.weather.humidity,
+      condition: logState.weather.condition,
+      conditionCode: logState.weather.conditionCode,
+      icon: logState.weather.icon
+    } : null,
+    activities: logState.activities,
+    isEvent: logState.isEvent,
+    eventResult: logState.isEvent ? (document.getElementById('event-result')?.value || '') : null,
+    eventMemo: logState.isEvent ? (document.getElementById('event-memo')?.value || '') : null,
+    goalId: null,
+    createdAt: idx >= 0 ? logs[idx].createdAt : new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  if (idx >= 0) logs[idx] = entry; else logs.unshift(entry);
+  saveData(STORAGE.logs, logs);
+  showToast('保存しました！');
+  renderHome();
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// ===== HOME TAB =====
+function renderHome() {
+  const profile = loadData(STORAGE.profile);
+  if (!profile) return;
+  const v = COACH_VOICES[profile.coach.personality + '_' + profile.coach.relationship] || COACH_VOICES['丁寧_友達'];
+  const logs = loadData(STORAGE.logs) || [];
+  const today = new Date().toISOString().slice(0,10);
+  const todayLog = logs.find(l => l.date === today);
+
+  // Streak calculation
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const ds = d.toISOString().slice(0,10);
+    if (logs.find(l => l.date === ds)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+
+  const moods = ['','😫','😟','😐','😊','🤩'];
+  const tab = document.getElementById('tab-home');
+  tab.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:${profile.coach.avatarColor};display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 8px;">
+        ${v.emoji}
+      </div>
+      <div style="font-size:0.85rem;color:var(--text-sub);">${escHtml(profile.coach.name)}より</div>
+    </div>
+    <div class="card">
+      <h3>おはよう、${escHtml(v.call(profile.name))}！</h3>
+      ${todayLog
+        ? `<p style="font-size:0.9rem;color:var(--text-sub)">今日の気分: ${moods[todayLog.mood]||'未記録'} ／ エネルギー: ${todayLog.energy||'?'}/5</p>`
+        : `<p style="font-size:0.9rem;color:var(--text-sub)">今日のコンディションを記録しよう。</p>
+           <button class="btn-primary" onclick="switchTab('log', document.querySelectorAll('.nav-item')[1]);renderLog();">今日のログを記録</button>`
+      }
+    </div>
+    ${streak > 0 ? `<div style="text-align:center;margin-bottom:12px;"><span class="streak-badge">🔥 ${streak}日連続記録中！</span></div>` : ''}
+    <div class="card">
+      <h3>📊 最近のログ</h3>
+      ${logs.length === 0
+        ? '<p style="color:var(--text-sub);font-size:0.9rem;">まだログがありません。</p>'
+        : `<div>${logs.slice(0,5).map(l => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem;">
+              <span>${l.date.slice(5)} ${moods[l.mood]||''}</span>
+              <span style="color:var(--text-sub)">E:${l.energy}/5 ${l.isEvent?'🏆':''}</span>
+            </div>
+          `).join('')}</div>`
+      }
+    </div>
+    <div id="home-weather" class="card">
+      <h3>🌤 今日の天気</h3>
+      <div id="home-weather-info">読み込み中...</div>
+    </div>
+  `;
+  loadHomeWeather();
+}
+
+async function loadHomeWeather() {
+  const w = await fetchWeather();
+  const el = document.getElementById('home-weather-info');
+  if (!el) return;
+  if (!w) { el.textContent = '天気を取得できませんでした'; return; }
+  el.innerHTML = `
+    <div class="weather-info">
+      <span class="w-icon">${w.icon}</span>
+      <div>
+        <div><strong>${w.condition}</strong> ${w.temperature}°C</div>
+        ${w.humidity !== null ? `<div style="font-size:0.8rem;">湿度: ${w.humidity}%</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// ===== ANALYSIS TAB =====
+let analysisPeriod = 30;
+
+function renderAnalysis() {
+  const logs = loadData(STORAGE.logs) || [];
+  const now = new Date();
+  const filtered = logs.filter(l => {
+    const diff = (now - new Date(l.date)) / (1000*60*60*24);
+    return diff <= analysisPeriod;
+  });
+
+  const tab = document.getElementById('tab-analysis');
+
+  // Weather-mood correlation
+  const weatherMood = {};
+  filtered.forEach(l => {
+    if (l.weather && l.mood) {
+      const cond = l.weather.condition;
+      if (!weatherMood[cond]) weatherMood[cond] = { sum: 0, count: 0 };
+      weatherMood[cond].sum += l.mood;
+      weatherMood[cond].count++;
+    }
+  });
+
+  // Day-of-week performance
+  const dayPerf = Array(7).fill(null).map(() => ({ sum: 0, count: 0 }));
+  const dayNames = ['日','月','火','水','木','金','土'];
+  filtered.forEach(l => {
+    if (l.mood) {
+      const dow = new Date(l.date).getDay();
+      dayPerf[dow].sum += l.mood;
+      dayPerf[dow].count++;
+    }
+  });
+
+  // Event results
+  const events = filtered.filter(l => l.isEvent && l.eventResult);
+
+  tab.innerHTML = `
+    <div class="section-title">📊 分析</div>
+    <div class="filter-row">
+      <button class="filter-btn ${analysisPeriod===7?'active':''}" onclick="analysisPeriod=7;renderAnalysis()">1週間</button>
+      <button class="filter-btn ${analysisPeriod===30?'active':''}" onclick="analysisPeriod=30;renderAnalysis()">1ヶ月</button>
+      <button class="filter-btn ${analysisPeriod===9999?'active':''}" onclick="analysisPeriod=9999;renderAnalysis()">全期間</button>
+    </div>
+    ${filtered.length === 0 ? '<div class="card"><p style="color:var(--text-sub);font-size:0.9rem;">データがありません。ログを記録すると分析が表示されます。</p></div>' : `
+    <div class="card">
+      <h3>🌤 天気別の平均気分</h3>
+      ${Object.keys(weatherMood).length === 0 ? '<p style="color:var(--text-sub);font-size:0.85rem;">天気データ付きのログが必要です</p>' :
+        Object.entries(weatherMood).map(([cond, d]) => {
+          const avg = (d.sum / d.count).toFixed(1);
+          return `<div class="chart-bar">
+            <div class="label">${escHtml(cond)}</div>
+            <div class="bar" style="width:${avg/5*100}%"></div>
+            <div class="val">${avg}/5 (${d.count}件)</div>
+          </div>`;
+        }).join('')
+      }
+    </div>
+    <div class="card">
+      <h3>📅 曜日別コンディション</h3>
+      <div class="heatmap-grid">
+        ${dayPerf.map((d, i) => {
+          const avg = d.count > 0 ? d.sum / d.count : 0;
+          const hue = avg > 0 ? Math.round((avg - 1) / 4 * 120) : 0;
+          const bg = d.count > 0 ? `hsl(${hue}, 70%, 50%)` : '#e0e0e0';
+          return `<div class="heatmap-cell" style="background:${bg}">${dayNames[i]}<br>${d.count>0?(avg).toFixed(1):'-'}</div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${events.length > 0 ? `
+    <div class="card">
+      <h3>🏆 本番結果の推移</h3>
+      ${events.map(e => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.85rem;">
+          <span>${e.date.slice(5)}</span>
+          <span><strong>${escHtml(e.eventResult)}</strong></span>
+        </div>
+      `).join('')}
+    </div>` : ''}
+    <div class="card" id="ai-analysis-area">
+      <h3>🤖 AI分析</h3>
+      <p style="color:var(--text-sub);font-size:0.85rem;">Gemini APIキーを設定するとAIがあなたのトリセツを生成します。</p>
+      <button class="btn-primary" onclick="switchTab('coach', document.querySelectorAll('.nav-item')[3])">コーチタブで設定</button>
+    </div>
+    `}
+  `;
+}
+
+// ===== COACH TAB =====
+function renderCoach() {
+  const profile = loadData(STORAGE.profile);
+  if (!profile) return;
+  const v = COACH_VOICES[profile.coach.personality + '_' + profile.coach.relationship] || COACH_VOICES['丁寧_友達'];
+  const goals = loadData(STORAGE.goals) || [];
+  const geminiKey = loadData(STORAGE.geminiKey) || '';
+  const coachCache = loadData(STORAGE.coachingCache);
+  const settings = loadData(STORAGE.settings) || { interests: [], events: [] };
+  const today = new Date();
+
+  const tab = document.getElementById('tab-coach');
+  tab.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:${profile.coach.avatarColor};display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 8px;">
+        ${v.emoji}
+      </div>
+      <div style="font-weight:600;">${escHtml(profile.coach.name)}</div>
+      <div style="font-size:0.8rem;color:var(--text-sub);">${profile.coach.personality} ／ ${profile.coach.relationship}</div>
+    </div>
+
+    <div class="card">
+      <h3>💬 コーチに相談</h3>
+      <div id="coaching-result">
+        ${coachCache && coachCache.date === today.toISOString().slice(0,10)
+          ? `<div style="background:var(--bg);border-radius:10px;padding:12px;font-size:0.9rem;white-space:pre-wrap;">${escHtml(coachCache.advice)}</div>`
+          : '<p style="color:var(--text-sub);font-size:0.85rem;">今日のコンディションに基づいたアドバイスをもらおう。</p>'
+        }
+      </div>
+      <button class="btn-primary" id="btn-coaching" onclick="requestCoaching()" ${!geminiKey?'disabled':''}>
+        ${geminiKey ? 'コーチに相談する' : 'APIキーを先に設定してください'}
+      </button>
+    </div>
+
+    <div class="card">
+      <h3>🎯 目標管理</h3>
+      <div id="goals-area">
+        ${goals.length === 0
+          ? '<p style="color:var(--text-sub);font-size:0.85rem;">目標を登録しよう！</p>'
+          : goals.map((g,i) => {
+              const daysLeft = Math.ceil((new Date(g.targetDate) - today) / (1000*60*60*24));
+              return `<div class="goal-item">
+                <div>
+                  <div class="goal-title">${escHtml(g.title)}</div>
+                  <div class="goal-date">${g.targetDate} ${g.achieved ? '✅ 達成！' : ''}</div>
+                </div>
+                ${!g.achieved && daysLeft >= 0
+                  ? `<div class="goal-countdown">あと${daysLeft}日</div>`
+                  : daysLeft < 0 && !g.achieved ? '<span style="color:#e53935;font-size:0.8rem;">期限超過</span>' : ''
+                }
+              </div>`;
+            }).join('')
+        }
+      </div>
+      <div style="margin-top:12px;">
+        <input id="goal-title" type="text" placeholder="目標（例: 次のラウンドで90切り）" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:6px;">
+        <input id="goal-date" type="date" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:6px;">
+        <button class="btn-primary" style="margin-top:0" onclick="addGoal()">目標を追加</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Gemini API設定</h3>
+      <input id="gemini-key-input" type="password" placeholder="Gemini APIキーを入力" value="${geminiKey}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:8px;">
+      <button class="btn-primary" style="margin-top:0" onclick="saveGeminiKey()">APIキーを保存</button>
+      <p style="color:var(--text-sub);font-size:0.75rem;margin-top:8px;">キーはこの端末のLocalStorageにのみ保存されます。</p>
+    </div>
+
+    <div class="card">
+      <h3>⭐ 推し・興味</h3>
+      <div id="interests-area" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        ${(settings.interests||[]).map((t,i) => `<span style="background:var(--bg);padding:4px 10px;border-radius:12px;font-size:0.85rem;">${escHtml(t)} <button onclick="removeInterest(${i})" style="background:none;border:none;cursor:pointer;color:#e53935;">×</button></span>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input id="interest-input" type="text" placeholder="追加（例: 星野源）" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;">
+        <button onclick="addInterest()" style="padding:8px 14px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;">追加</button>
+      </div>
+    </div>
+  `;
+}
+
+function addGoal() {
+  const title = document.getElementById('goal-title')?.value.trim();
+  const date = document.getElementById('goal-date')?.value;
+  if (!title || !date) return;
+  const goals = loadData(STORAGE.goals) || [];
+  goals.push({ id: Date.now(), title, targetDate: date, category: '', achieved: false, result: null, createdAt: new Date().toISOString() });
+  saveData(STORAGE.goals, goals);
+  renderCoach();
+  showToast('目標を追加しました！');
+}
+
+function saveGeminiKey() {
+  const key = document.getElementById('gemini-key-input')?.value.trim();
+  saveData(STORAGE.geminiKey, key);
+  showToast('APIキーを保存しました');
+  renderCoach();
+}
+
+function addInterest() {
+  const val = document.getElementById('interest-input')?.value.trim();
+  if (!val) return;
+  const settings = loadData(STORAGE.settings) || { interests: [], events: [] };
+  settings.interests = settings.interests || [];
+  settings.interests.push(val);
+  saveData(STORAGE.settings, settings);
+  renderCoach();
+}
+
+function removeInterest(idx) {
+  const settings = loadData(STORAGE.settings) || { interests: [] };
+  settings.interests.splice(idx, 1);
+  saveData(STORAGE.settings, settings);
+  renderCoach();
+}
+
+// ===== GEMINI API =====
+async function callGemini(prompt) {
+  const key = loadData(STORAGE.geminiKey);
+  if (!key) { showToast('APIキーが設定されていません'); return null; }
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } catch(e) {
+    showToast('AI呼び出しエラー: ' + e.message);
+    return null;
+  }
+}
+
+async function requestCoaching() {
+  const btn = document.getElementById('btn-coaching');
+  if (btn) { btn.disabled = true; btn.textContent = '相談中...'; }
+
+  const profile = loadData(STORAGE.profile);
+  const logs = loadData(STORAGE.logs) || [];
+  const settings = loadData(STORAGE.settings) || {};
+  const goals = loadData(STORAGE.goals) || [];
+  const weather = await fetchWeather();
+  const recent = logs.slice(0, 14);
+
+  const prompt = `あなたは「${profile.coach.name}」という名前の${profile.coach.personality}で${profile.coach.relationship}のコーチです。
+${profile.coach.customDetail ? '口調の詳細: ' + profile.coach.customDetail : ''}
+ユーザー名: ${profile.name}
+活動: ${profile.mainActivity}
+
+今日の天気: ${weather ? weather.condition + ' ' + weather.temperature + '°C 湿度' + weather.humidity + '%' : '不明'}
+
+最近のログ（直近14日）:
+${recent.map(l => `${l.date}: 気分${l.mood}/5 エネルギー${l.energy}/5 天気:${l.weather?.condition||'?'} ${l.isEvent?'【本番】'+l.eventResult:''}`).join('\n')}
+
+目標: ${goals.filter(g=>!g.achieved).map(g => g.title + '(期限:' + g.targetDate + ')').join(', ') || 'なし'}
+${profile.idol ? '尊敬する人: ' + profile.idol.name + '（公知の事実やエピソードを「〜したらしいよ」「〜って言ってたみたいだよ」と柔らかく紹介してOK。直接引用は避ける）' : ''}
+興味: ${(settings.interests||[]).join(', ')}
+
+上記をもとに、以下をコーチの口調で提供してください:
+1. 今日のコンディションに基づいた具体的アドバイス（2-3個）
+2. 過去の傾向から気をつけるべきこと
+3. ${profile.idol ? profile.idol.name + 'に関連したエピソードや励まし' : '励ましの一言'}
+4. 次の目標に向けた一言
+
+親しみやすく、短めに。`;
+
+  const result = await callGemini(prompt);
+  if (result) {
+    const cache = { date: new Date().toISOString().slice(0,10), advice: result };
+    saveData(STORAGE.coachingCache, cache);
+    const area = document.getElementById('coaching-result');
+    if (area) area.innerHTML = `<div style="background:var(--bg);border-radius:10px;padding:12px;font-size:0.9rem;white-space:pre-wrap;">${escHtml(result)}</div>`;
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'コーチに相談する'; }
+  setTimeout(() => { if (btn) btn.disabled = false; }, 10000);
+}
+
+// ===== COMMUNITY TAB =====
+function renderCommunity() {
+  const tab = document.getElementById('tab-community');
+  tab.innerHTML = `
+    <div class="section-title">👥 コミュニティ</div>
+    <div class="card">
+      <h3>🔗 Firebase設定</h3>
+      <p style="color:var(--text-sub);font-size:0.85rem;margin-bottom:12px;">
+        コミュニティ機能を使うには、Firebaseプロジェクトの設定が必要です。
+        この機能はオプションです。設定しなくても他の機能はすべて使えます。
+      </p>
+      <div style="background:var(--bg);border-radius:10px;padding:16px;font-size:0.85rem;color:var(--text-sub);">
+        <strong>セットアップ手順:</strong>
+        <ol style="margin-top:8px;padding-left:20px;line-height:1.8;">
+          <li>Firebase Consoleでプロジェクト作成</li>
+          <li>Authentication で匿名認証を有効化</li>
+          <li>Firestore Database を作成</li>
+          <li>プロジェクト設定からFirebase構成をコピー</li>
+        </ol>
+      </div>
+      <textarea id="firebase-config" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}' rows="4" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;margin-top:12px;"></textarea>
+      <button class="btn-primary" onclick="saveFirebaseConfig()">設定を保存</button>
+    </div>
+    <div class="card">
+      <h3>🌍 地域の気分マップ</h3>
+      <p style="color:var(--text-sub);font-size:0.85rem;">Firebase設定後に利用可能になります。同じ地域の人の平均気分やコンディション傾向を匿名で共有できます。</p>
+    </div>
+  `;
+}
+
+function saveFirebaseConfig() {
+  const val = document.getElementById('firebase-config')?.value.trim();
+  if (!val) return;
+  try {
+    JSON.parse(val);
+    const settings = loadData(STORAGE.settings) || {};
+    settings.firebaseConfig = val;
+    saveData(STORAGE.settings, settings);
+    showToast('Firebase設定を保存しました');
+  } catch {
+    showToast('JSONの形式が正しくありません');
+  }
+}
+
+// ===== INIT =====
+function init() {
+  const profile = loadData(STORAGE.profile);
+  if (profile && profile.setupCompleted) {
+    document.getElementById('setup-overlay').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    renderHome();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
