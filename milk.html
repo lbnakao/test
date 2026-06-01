@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M!LK きぶんセレクト</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Zen Maru Gothic', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 30%, #e8eaf6 60%, #e0f7fa 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 24px;
+      padding: 36px 28px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(180, 140, 200, 0.2);
+      margin-top: 10px;
+    }
+
+    .logo { text-align: center; margin-bottom: 8px; }
+
+    .logo h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #e91e63, #9c27b0, #3f51b5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #999;
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .progress-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #e8e0f0;
+      transition: all 0.3s ease;
+    }
+
+    .progress-dot.active {
+      background: linear-gradient(135deg, #e91e63, #9c27b0);
+      transform: scale(1.2);
+    }
+
+    .progress-dot.done {
+      background: #ce93d8;
+    }
+
+    /* Question */
+    .question-area {
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .question-number {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #ce93d8;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .question-text {
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      background: #fff;
+      border: 2px solid #e8e0f0;
+      border-radius: 16px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: left;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(180, 140, 200, 0.25);
+      border-color: #ce93d8;
+    }
+
+    .choice-btn:active { transform: translateY(0); }
+
+    .choice-emoji { font-size: 1.5rem; flex-shrink: 0; }
+
+    /* Result */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-area { animation: fadeInUp 0.5s ease; }
+
+    .result-header {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #ab47bc;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .result-lead {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    .song-card {
+      background: linear-gradient(135deg, #fce4ec, #f3e5f5);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .song-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .song-desc {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .thumb-link {
+      display: block;
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .thumb-link img {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .play-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.25);
+      transition: background 0.2s ease;
+    }
+
+    .thumb-link:hover .play-overlay {
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .play-icon {
+      width: 64px; height: 64px;
+      background: rgba(171, 71, 188, 0.9);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s ease;
+    }
+
+    .thumb-link:hover .play-icon {
+      transform: scale(1.1);
+    }
+
+    .play-icon::after {
+      content: '';
+      display: block;
+      width: 0; height: 0;
+      border-style: solid;
+      border-width: 12px 0 12px 22px;
+      border-color: transparent transparent transparent #fff;
+      margin-left: 4px;
+    }
+
+    .yt-text {
+      display: block;
+      margin-top: 12px;
+      color: #ab47bc;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .reset-btn {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      background: linear-gradient(135deg, #ce93d8, #ab47bc);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .reset-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(171, 71, 188, 0.4);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.7rem;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .footer a {
+      color: #ab47bc;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 24px 16px; }
+      .logo h1 { font-size: 1.6rem; }
+      .choice-btn { padding: 14px 16px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>M!LK きぶんセレクト</h1>
+    </div>
+    <p class="subtitle">3つの質問に答えて、今日のあなたにぴったりの1曲を診断!</p>
+
+    <div class="progress-bar">
+      <div class="progress-dot active" id="dot-0"></div>
+      <div class="progress-dot" id="dot-1"></div>
+      <div class="progress-dot" id="dot-2"></div>
+    </div>
+
+    <div id="content"></div>
+
+    <div class="footer">
+      M!LK official YouTube の公式MVを紹介しています<br>
+      <a href="index.html">← 天気・花粉情報へ</a>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        number: 'Q1',
+        text: '今日のテンションは？',
+        choices: [
+          { emoji: '🔥', label: 'めっちゃ高い！', value: 'high' },
+          { emoji: '😊', label: 'ふつう〜', value: 'mid' },
+          { emoji: '😴', label: 'ちょっと低め...', value: 'low' },
+        ]
+      },
+      {
+        number: 'Q2',
+        text: '今いちばんしたいことは？',
+        choices: [
+          { emoji: '💃', label: '踊りたい・騒ぎたい！', value: 'dance' },
+          { emoji: '💪', label: 'やる気出したい！', value: 'motivate' },
+          { emoji: '💭', label: 'ぼーっとしたい', value: 'chill' },
+          { emoji: '😭', label: '泣きたい・浸りたい', value: 'cry' },
+        ]
+      },
+      {
+        number: 'Q3',
+        text: '気になるキーワードは？',
+        choices: [
+          { emoji: '💗', label: '恋・ときめき', value: 'love' },
+          { emoji: '🌈', label: '青春・仲間', value: 'youth' },
+          { emoji: '☀️', label: '夏・爽やか', value: 'summer' },
+          { emoji: '🌙', label: '夜・ひとり時間', value: 'night' },
+        ]
+      }
+    ];
+
+    const songs = [
+      {
+        title: 'イイじゃん',
+        videoId: 'GW-XMhRQDFI',
+        desc: 'TikTokで大バズり！テンション爆上がりのキラキラチューン',
+        message: 'キラキラ輝くあなたにはこれ！',
+        scores: {
+          high: 5, mid: 2, low: 0,
+          dance: 5, motivate: 2, chill: 0, cry: 0,
+          love: 1, youth: 4, summer: 4, night: 0,
+        }
+      },
+      {
+        title: '爆裂愛してる',
+        videoId: 'tpFDnOnOdSQ',
+        desc: '情熱全開！宇宙規模の爆裂ラブソング',
+        message: '溢れる情熱を受け止めて！',
+        scores: {
+          high: 5, mid: 3, low: 0,
+          dance: 5, motivate: 2, chill: 0, cry: 0,
+          love: 5, youth: 2, summer: 1, night: 1,
+        }
+      },
+      {
+        title: '好きすぎて滅！',
+        videoId: 'ZVUxJsPfoX8',
+        desc: '好きすぎて滅びちゃう!? キュンが止まらない恋の曲',
+        message: 'キュン全開のあなたにはこれ！',
+        scores: {
+          high: 4, mid: 4, low: 1,
+          dance: 4, motivate: 1, chill: 2, cry: 1,
+          love: 5, youth: 3, summer: 1, night: 2,
+        }
+      },
+      {
+        title: 'アオノオト',
+        videoId: 'JyypMgU68e0',
+        desc: '野球部に扮した青春ドラマMV！夢に向かって走り出す一曲',
+        message: '夢に向かって走り出すあなたへ！',
+        scores: {
+          high: 3, mid: 4, low: 1,
+          dance: 1, motivate: 5, chill: 1, cry: 1,
+          love: 1, youth: 5, summer: 4, night: 0,
+        }
+      },
+      {
+        title: 'かすかに、君だった。',
+        videoId: 'tTq3f71TgGM',
+        desc: '大切な人への想いが溢れる、心に沁みる切ないバラード',
+        message: 'そっと寄り添う一曲を贈ります',
+        scores: {
+          high: 0, mid: 2, low: 5,
+          dance: 0, motivate: 0, chill: 3, cry: 5,
+          love: 5, youth: 2, summer: 0, night: 5,
+        }
+      },
+      {
+        title: 'Winding Road',
+        videoId: 'GOntxVOHY68',
+        desc: 'もがきながらも前に進む若者を描いた、力強い応援ソング',
+        message: '立ち止まっても大丈夫。この曲が背中を押すよ',
+        scores: {
+          high: 1, mid: 3, low: 4,
+          dance: 0, motivate: 5, chill: 1, cry: 4,
+          love: 1, youth: 5, summer: 0, night: 3,
+        }
+      },
+      {
+        title: 'Ribbon',
+        videoId: 'S3ptFcm1wXE',
+        desc: 'メジャーデビュー曲！絆を結ぶ想いを込めたラブソング',
+        message: '大切な人を想うあなたにぴったり',
+        scores: {
+          high: 1, mid: 4, low: 3,
+          dance: 1, motivate: 2, chill: 4, cry: 3,
+          love: 5, youth: 3, summer: 0, night: 3,
+        }
+      },
+      {
+        title: 'ブルーシャワー',
+        videoId: 'OJLOqmz5IKE',
+        desc: 'シーブリーズCMソング！夏の爽やかさ全開の一曲',
+        message: '爽やかな風を感じて！',
+        scores: {
+          high: 4, mid: 4, low: 1,
+          dance: 3, motivate: 2, chill: 3, cry: 0,
+          love: 2, youth: 3, summer: 5, night: 0,
+        }
+      },
+      {
+        title: 'エビバディグッジョブ！',
+        videoId: 'tfMPr2mIJXg',
+        desc: '毎日頑張るあなたへ！明るく背中を押してくれる応援歌',
+        message: '今日も頑張ったあなた、最高！',
+        scores: {
+          high: 4, mid: 3, low: 2,
+          dance: 3, motivate: 5, chill: 1, cry: 0,
+          love: 0, youth: 5, summer: 2, night: 0,
+        }
+      },
+      {
+        title: 'コーヒーが飲めません',
+        videoId: '84AsL4blnQ4',
+        desc: 'ほっこりかわいいデビュー曲！等身大の素直な気持ち',
+        message: 'まったり過ごす夜のお供に',
+        scores: {
+          high: 0, mid: 3, low: 4,
+          dance: 0, motivate: 0, chill: 5, cry: 2,
+          love: 4, youth: 1, summer: 0, night: 5,
+        }
+      }
+    ];
+
+    let currentStep = 0;
+    const answers = [];
+
+    function renderQuestion() {
+      const q = questions[currentStep];
+      let choicesHtml = q.choices.map(c =>
+        `<button class="choice-btn" onclick="answer('${c.value}')">
+          <span class="choice-emoji">${c.emoji}</span>
+          <span>${c.label}</span>
+        </button>`
+      ).join('');
+
+      document.getElementById('content').innerHTML = `
+        <div class="question-area">
+          <p class="question-number">${q.number} / Q${questions.length}</p>
+          <p class="question-text">${q.text}</p>
+          <div class="choices">${choicesHtml}</div>
+        </div>
+      `;
+    }
+
+    function updateDots() {
+      for (let i = 0; i < questions.length; i++) {
+        const dot = document.getElementById('dot-' + i);
+        dot.className = 'progress-dot';
+        if (i < currentStep) dot.classList.add('done');
+        else if (i === currentStep) dot.classList.add('active');
+      }
+    }
+
+    function answer(value) {
+      answers.push(value);
+      currentStep++;
+      updateDots();
+
+      if (currentStep < questions.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      let bestSong = null;
+      let bestScore = -1;
+
+      for (const song of songs) {
+        let total = 0;
+        for (const ans of answers) {
+          total += song.scores[ans] || 0;
+        }
+        if (total > bestScore) {
+          bestScore = total;
+          bestSong = song;
+        }
+      }
+
+      const ytUrl = 'https://www.youtube.com/watch?v=' + bestSong.videoId;
+
+      const thumbUrl = 'https://img.youtube.com/vi/' + bestSong.videoId + '/hqdefault.jpg';
+
+      document.getElementById('content').innerHTML = `
+        <div class="result-area">
+          <p class="result-header">${bestSong.message}</p>
+          <p class="result-lead">今日のあなたにはこの1曲!</p>
+          <div class="song-card">
+            <p class="song-title">${bestSong.title}</p>
+            <p class="song-desc">${bestSong.desc}</p>
+            <a class="thumb-link" href="${ytUrl}" target="_blank" rel="noopener">
+              <img src="${thumbUrl}" alt="${bestSong.title}">
+              <div class="play-overlay">
+                <div class="play-icon"></div>
+              </div>
+            </a>
+            <span class="yt-text">タップしてYouTubeで再生 ▶</span>
+          </div>
+          <button class="reset-btn" onclick="restart()">もう一回診断する</button>
+        </div>
+      `;
+    }
+
+    function restart() {
+      currentStep = 0;
+      answers.length = 0;
+      updateDots();
+      renderQuestion();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Start
+    renderQuestion();
+  </script>
+</body>
+</html>

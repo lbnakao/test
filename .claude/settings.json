@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:jpop.fandom.com)",
+      "WebFetch(domain:www.uta-net.com)",
+      "WebFetch(domain:ranking-mania.net)",
+      "PowerShell(Get-Volume | Where-Object { $_.DriveLetter } | Select-Object DriveLetter, FileSystemLabel, @{N='SizeGB';E={[math]::Round\\($_.Size/1GB,1\\)}}, DriveType | Format-Table -AutoSize)",
+      "PowerShell($root = \"G:\\\\20251030松岡製作所様\\\\20251030松岡製作所様\"; if \\(Test-Path $root\\) { Write-Output \"OK: $root exists\"; Get-ChildItem $root -Directory | Select-Object Name } else { Write-Output \"NOT FOUND: $root\"; Write-Output \"---G:\\\\直下を確認---\"; Get-ChildItem \"G:\\\\\" -Directory -ErrorAction SilentlyContinue | Select-Object Name })"
+    ]
+  }
+}

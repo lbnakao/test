@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pwsh.exe -File *list_unused.ps1*)",
+      "PowerShell(pwsh.exe -File *copy_photos.ps1*)",
+      "PowerShell(pwsh.exe -File *update_state.ps1*)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File *list_unused.ps1*)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File *copy_photos.ps1*)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File *update_state.ps1*)",
+      "Read(G:\\**)",
+      "Write(C:\\Users\\event\\OneDrive\\デスクトップ\\松岡カルーセル_*\\**)"
+    ]
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -Command \"1..3 | %{ [Console]::Beep(880,250); Start-Sleep -Milliseconds 100 }; Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('クロードが応答を待っています')\"",
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
