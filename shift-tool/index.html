@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>かんたんシフト作成 - 買い切り版 v4</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#fff; --line:#e2e6ea; --ink:#222; --sub:#667;
+    --accent:#2563eb; --accent-d:#1e40af; --off:#fde2e2; --offink:#b42318;
+    --work:#e7f0ff; --warn:#fff3cd; --warnink:#9a6b00;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .badge{font-size:11px;background:#eef2ff;color:var(--accent-d);padding:3px 8px;border-radius:20px;font-weight:600}
+  .modeswitch{margin-left:auto;display:flex;gap:6px;background:#eef2f6;padding:4px;border-radius:8px}
+  .modeswitch button{background:transparent;color:#445;padding:6px 12px}
+  .modeswitch button.on{background:var(--accent);color:#fff}
+  .wrap{max-width:1280px;margin:0 auto;padding:18px 20px 80px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--sub);font-weight:700}
+  .card h2 .big{font-size:16px;color:var(--ink)}
+  details.acc{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+  details.acc>summary{padding:13px 18px;cursor:pointer;font-weight:700;color:var(--sub);list-style:none;display:flex;align-items:center;gap:8px}
+  details.acc>summary::-webkit-details-marker{display:none}
+  details.acc>summary::before{content:"▸";color:var(--accent);font-size:12px}
+  details.acc[open]>summary::before{content:"▾"}
+  details.acc>summary .cnt{margin-left:auto;font-weight:500;font-size:12px;color:#99a}
+  details.acc>.body{padding:0 18px 16px}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:11px;color:var(--sub);font-weight:600}
+  input,select{padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:14px;font-family:inherit;background:#fff}
+  input[type=number]{width:78px}
+  button{border:0;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn{background:var(--accent);color:#fff}.btn:hover{background:var(--accent-d)}
+  .btn-lg{padding:11px 20px;font-size:15px}
+  .btn-ghost{background:#eef2f6;color:#334}.btn-ghost:hover{background:#e2e8ee}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  .btn-danger{background:#fee;color:#b42318}
+  .link{background:none;color:var(--accent);padding:4px;text-decoration:underline;font-size:12px}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center;font-size:13px;vertical-align:middle}
+  thead th{background:#f7f9fb;color:var(--sub);font-weight:600;white-space:nowrap}
+  .staff-name{text-align:left;white-space:nowrap;font-weight:600}
+  .staff-name small{display:block;color:var(--sub);font-weight:400;font-size:11px}
+  .wknd{color:#b42318}.sat{color:#2563eb}
+  .cell{cursor:pointer;min-width:70px;user-select:none;font-size:12px;line-height:1.25}
+  .cell.work{background:var(--work);font-weight:600}
+  .cell.off{background:var(--off);color:var(--offink);font-weight:600}
+  .cell.unavail{background:#f0f0f0;color:#bbb}
+  .cell.warn{box-shadow:inset 0 0 0 2px #e0a800}
+  .cell:hover{outline:2px solid var(--accent);outline-offset:-2px}
+  .tag{font-size:10px;padding:0 4px;border-radius:3px;color:#fff;display:inline-block}
+  .tag.ptn{background:#475569}
+  .staff-table input[type=text]{width:88px}.staff-table input[type=number]{width:70px}
+  .daychk,.poschk{display:flex;gap:3px;flex-wrap:wrap}
+  .daychk label{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--sub);gap:2px}
+  .poschk label{font-size:11px;display:flex;gap:2px;align-items:center;background:#f4f6f8;padding:2px 6px;border-radius:5px}
+  .ptns{display:flex;flex-direction:column;gap:4px;min-width:210px}
+  .ptn{display:flex;gap:3px;align-items:center;justify-content:center}
+  .ptn input[type=text]{width:46px;text-align:center;font-weight:700}
+  .ptn input[type=time]{padding:4px;width:104px}
+  .ptn .x{background:#fde2e2;color:#b42318;padding:2px 7px;border-radius:5px}
+  .grand{background:#eef6ee;font-weight:700}
+  .money{color:#0a7d34;font-weight:700}
+  .hint{font-size:12px;color:var(--sub);margin:6px 0 0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-bottom:10px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:14px;height:14px;border-radius:3px;border:1px solid var(--line);display:inline-block}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .scroll{overflow-x:auto}
+  .monthnav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:12px}
+  .monthnav .mlabel{font-size:18px;font-weight:800;min-width:140px;text-align:center}
+  .monthnav .nav{background:#fff;border:1px solid var(--line);color:#334}
+  .warnbox{background:var(--warn);border:1px solid #ffe08a;color:var(--warnink);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px}
+  .warnbox ul{margin:6px 0 0;padding-left:20px}
+  .okbox{background:#e6f4ea;border:1px solid #b7dfc4;color:#1d6b37;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:13px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-width:620px}
+  .cal .h{text-align:center;font-weight:700;color:var(--sub);font-size:12px;padding:4px}
+  .cal .d{aspect-ratio:1.25;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600;background:#fff;position:relative;font-size:16px}
+  .cal .d.blank{border:0;background:transparent;cursor:default}
+  .cal .d.sel{background:var(--off);color:var(--offink);border-color:#f0b4b4}
+  .cal .d.sel::after{content:"休";position:absolute;bottom:2px;font-size:9px;font-weight:700}
+  .cal .d:hover:not(.blank){outline:2px solid var(--accent)}
+  .login{max-width:360px;margin:30px auto;text-align:center}
+  .login input{font-size:20px;text-align:center;width:100%;letter-spacing:3px;padding:12px}
+  .whoami{display:inline-block;background:#eef2ff;color:var(--accent-d);padding:6px 14px;border-radius:20px;font-weight:700}
+  .empinfo{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.7}
+  .empinfo .big{font-size:15px;font-weight:800;color:var(--accent-d)}
+  .empinfo .memo{background:#fffbe6;border:1px solid #ffe08a;border-radius:6px;padding:8px 10px;margin-top:8px;color:#7a5400}
+  .empinfo .fuyou{color:var(--sub);margin-top:8px;font-size:12px}
+  .empinfo .near{color:#b42318;font-weight:700}
+  @media print{ header,.toolbar,.no-print,.acc,button,.modeswitch,.monthnav .nav,.monthnav input{display:none!important}
+    body{background:#fff}.card{border:0;padding:0}.cell{cursor:default}.monthnav{background:#fff;border:0;padding:0} }
+</style>
+</head>
+<body>
+<header>
+  <h1>かんたんシフト作成</h1>
+  <span class="badge">v4</span>
+  <div class="modeswitch no-print">
+    <button id="mMgr" class="on" onclick="setMode('mgr')">🧑‍💼 店長</button>
+    <button id="mEmp" onclick="setMode('emp')">🙋 従業員（希望休）</button>
+  </div>
+</header>
+
+<!-- ================= 店長モード ================= -->
+<div class="wrap" id="managerView">
+  <div class="toolbar no-print">
+    <button class="btn btn-lg" onclick="autoMake()">⚡ 自動でシフトを作る</button>
+    <span style="flex:1"></span>
+    <button class="btn-ghost" onclick="window.print()">🖨 印刷</button>
+    <button class="btn-ghost" onclick="exportCSV()">CSV</button>
+    <button class="btn-ghost" onclick="saveFile()">保存</button>
+    <button class="btn-ghost" onclick="document.getElementById('imp').click()">開く</button>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="loadFile(event)">
+  </div>
+
+  <details class="acc" id="accConfig">
+    <summary>⚙ ルール設定（休憩・必要人数・上限）<span class="cnt" id="cfgCnt"></span></summary>
+    <div class="body">
+      <div class="row">
+        <div class="field"><label>休憩(分/勤務)</label><input type="number" id="brk" min="0" max="240" step="15"></div>
+        <div class="field"><label>必要人数(役割未設定時)</label><input type="number" id="required" min="1" max="30"></div>
+        <div class="field"><label>⚠ 週の上限(h) 全体既定</label><input type="number" id="maxWeek" min="0" max="80"></div>
+        <div class="field"><label>⚠ 連勤上限(日) 全体既定</label><input type="number" id="maxConsec" min="1" max="14"></div>
+        <button class="btn" onclick="applyConfig()">反映</button>
+      </div>
+      <p class="hint">「対象の月」はシフト表の上の ◀ ▶ で切り替えます（過去の月も見られます）。</p>
+    </div>
+  </details>
+
+  <details class="acc" id="accPos">
+    <summary>🏷 ポジション（役割）設定<span class="cnt" id="posCnt"></span></summary>
+    <div class="body">
+      <div class="scroll"><table id="posTable"></table></div>
+      <button class="btn-sm btn" onclick="addPos()" style="margin-top:10px">+ ポジションを追加</button>
+      <p class="hint">役割を1つ以上登録すると、自動作成は役割ごとの必要人数で配置します。</p>
+    </div>
+  </details>
+
+  <details class="acc" id="accStaff">
+    <summary>👥 スタッフ登録<span class="cnt" id="staffCnt"></span></summary>
+    <div class="body">
+      <div class="scroll"><table class="staff-table" id="staffTable"></table></div>
+      <button class="btn-sm btn" onclick="addStaff()" style="margin-top:10px">+ スタッフを追加</button>
+      <p class="hint">勤務パターン（早番A・遅番Bなど）は人ごとに何個でも登録できます。自動作成では各自の先頭パターンを使い、セルのダブルクリックで切り替えられます。<br>「週上限・連勤上限」は<b>人ごとに設定</b>でき、空欄ならルール設定の全体既定を使います（例：扶養内パートは週28hなど）。自動作成もこの上限を守って配置します。</p>
+    </div>
+  </details>
+
+  <div class="card">
+    <h2><span class="big">シフト表</span></h2>
+    <div class="monthnav no-print">
+      <button class="nav" onclick="shiftMonth(-1)">◀ 前の月</button>
+      <span class="mlabel" id="monthLabel"></span>
+      <button class="nav" onclick="shiftMonth(1)">次の月 ▶</button>
+      <button class="nav btn-sm" onclick="thisMonthJump()">今月</button>
+      <span style="flex:1"></span>
+      <label class="hint" style="margin:0">月を指定：</label>
+      <input type="month" id="ym" onchange="jumpMonth()">
+    </div>
+    <div class="mlabel" id="monthLabelPrint" style="display:none"></div>
+    <div id="warnArea"></div>
+    <div class="legend no-print">
+      <span><i class="sw" style="background:var(--work)"></i>勤務</span>
+      <span><i class="sw" style="background:var(--off)"></i>希望休</span>
+      <span><i class="sw" style="background:#f0f0f0"></i>勤務不可</span>
+      <span><i class="sw" style="box-shadow:inset 0 0 0 2px #e0a800"></i>上限超え</span>
+      <span>セルをクリックで切り替え：空き→A→B…→休み→空き</span>
+    </div>
+    <div class="scroll"><table id="shiftTable"></table></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="big">集計（人件費）</span></h2>
+    <div class="scroll"><table id="sumTable"></table></div>
+  </div>
+</div>
+
+<!-- ================= 従業員モード ================= -->
+<div class="wrap" id="empView" style="display:none">
+  <div class="card login" id="empLogin">
+    <h2 style="justify-content:center">🙋 希望休の入力</h2>
+    <p class="hint" style="margin-bottom:14px">あなたの社員番号を入力してください</p>
+    <input type="text" id="empNoInput" inputmode="numeric" placeholder="例: 1001" onkeydown="if(event.key==='Enter')empLogin()">
+    <button class="btn btn-lg" style="margin-top:14px;width:100%" onclick="empLogin()">ログイン</button>
+    <p class="hint" id="loginErr" style="color:#b42318"></p>
+  </div>
+  <div id="empMain" style="display:none">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="whoami" id="empWho"></span>
+        <span style="font-weight:700" id="empMonth"></span>
+        <span style="flex:1"></span>
+        <button class="link" onclick="empLogout()">別の人で入力／ログアウト</button>
+      </div>
+      <p class="hint">休みたい日をタップして「希望休」にし、下の「送信」を押してください。店長のシフト表に反映されます。</p>
+      <div id="empInfo"></div>
+    </div>
+    <div class="card">
+      <div class="cal" id="empCal"></div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-lg" onclick="empSubmit()">📤 希望休を送信</button>
+        <button class="btn-ghost" onclick="empReload()">選択をリセット</button>
+        <span style="flex:1"></span>
+        <button class="link" onclick="empExportFile()">別の端末から渡す場合（ファイル保存）</button>
+      </div>
+      <p class="hint" id="empMsg"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DOW=["日","月","火","水","木","金","土"];
+const MON=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+const PALETTE=["#2563eb","#16a34a","#db2777","#ea580c","#7c3aed","#0891b2","#ca8a04"];
+const FALLBACK={label:"",start:"09:00",end:"18:00"};
+const FUYOU="扶養の壁メモ（年収の目安）：103万円＝所得税／106万円＝勤務先により社会保険加入／130万円＝社会保険の扶養から外れる／150万円＝配偶者特別控除が満額の目安。あくまで目安です。最新の条件は勤務先・年金事務所などでご確認ください。";
+let state=null, mode='mgr', empSel=new Set(), empStaffId=null;
+
+function defaultState(){
+  return { ym:thisMonth(), brk:60, required:2, maxWeek:40, maxConsec:6,
+    positions:[ pos("ホール",1), pos("キッチン",1) ],
+    staff:[
+      stf("佐藤",1100,"1001",[ptn("A","09:00","18:00"),ptn("B","11:00","20:00")]),
+      stf("鈴木",1050,"1002",[ptn("A","09:00","18:00")],{maxWeek:28,memo:"扶養内（週28hまで）。年130万円の壁に注意してね。"}),
+      stf("田中",1200,"1003",[ptn("遅番","13:00","22:00")]),
+    ], shifts:{} };
+}
+let _id=0; const uid=p=>p+(_id++)+"_"+Math.floor(performance.now());
+function pos(name,req){ return {id:uid("p"),name,required:req,color:PALETTE[_id%PALETTE.length]}; }
+function ptn(label,start,end){ return {label,start,end}; }
+function stf(name,wage,no,patterns,opt){ opt=opt||{}; return {id:uid("s"),name,wage,empNo:no,days:[true,true,true,true,true,true,true],positions:[],patterns:patterns||[ptn("A","09:00","18:00")],maxWeek:opt.maxWeek||"",maxConsec:opt.maxConsec||"",memo:opt.memo||""}; }
+function thisMonth(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+
+function load(){ try{const s=localStorage.getItem("shiftToolV4"); if(s){state=JSON.parse(s);migrate();return;}}catch(e){} state=defaultState(); }
+function migrate(){ if(!state.positions)state.positions=[];
+  state.staff.forEach((s,i)=>{ if(!s.positions)s.positions=[]; if(!s.empNo)s.empNo=String(1001+i);
+    if(!s.patterns||!s.patterns.length)s.patterns=[ptn("A",s.start||"09:00",s.end||"18:00")];
+    if(s.maxWeek===undefined)s.maxWeek=""; if(s.maxConsec===undefined)s.maxConsec=""; if(s.memo===undefined)s.memo=""; });
+  if(state.maxWeek==null)state.maxWeek=40; if(state.maxConsec==null)state.maxConsec=6; if(state.brk==null)state.brk=60; if(state.required==null)state.required=2; }
+function persist(){ try{localStorage.setItem("shiftToolV4",JSON.stringify(state));}catch(e){} }
+
+function ymParts(ym){const[y,m]=ym.split("-").map(Number);return[y,m];}
+function daysInMonth(){const[y,m]=ymParts(state.ym);return new Date(y,m,0).getDate();}
+function dateOf(i){const[y,m]=ymParts(state.ym);return new Date(y,m-1,1+i);}
+function ymText(ym){const[y,m]=ymParts(ym);return `${y}年${MON[m-1]}`;}
+function firstPtn(s){return (s.patterns&&s.patterns[0])?s.patterns[0]:FALLBACK;}
+function effWeek(s){ return (s.maxWeek!==""&&s.maxWeek!=null&&!isNaN(Number(s.maxWeek)))?Number(s.maxWeek):state.maxWeek; }
+function effConsec(s){ return (s.maxConsec!==""&&s.maxConsec!=null&&!isNaN(Number(s.maxConsec))&&Number(s.maxConsec)>0)?Number(s.maxConsec):state.maxConsec; }
+
+/* 月ナビ */
+function shiftMonth(delta){ let[y,m]=ymParts(state.ym); m+=delta; while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} state.ym=`${y}-${String(m).padStart(2,"0")}`; persist(); renderMonth(); }
+function jumpMonth(){ const v=document.getElementById("ym").value; if(v){state.ym=v;persist();renderMonth();} }
+function thisMonthJump(){ state.ym=thisMonth(); persist(); renderMonth(); }
+function renderMonth(){ document.getElementById("ym").value=state.ym;
+  document.getElementById("monthLabel").textContent=ymText(state.ym);
+  document.getElementById("monthLabelPrint").textContent=ymText(state.ym)+" シフト表";
+  renderShift(); renderSum(); }
+
+function applyConfig(){ state.brk=Math.max(0,parseInt(document.getElementById("brk").value)||0);
+  state.required=Math.max(1,parseInt(document.getElementById("required").value)||1);
+  state.maxWeek=Math.max(0,parseInt(document.getElementById("maxWeek").value)||0);
+  state.maxConsec=Math.max(1,parseInt(document.getElementById("maxConsec").value)||1); renderMgr(); }
+
+/* ポジション */
+function renderPos(){ const t=document.getElementById("posTable");
+  let h="<thead><tr><th>色</th><th>ポジション名</th><th>必要人数/日</th><th></th></tr></thead><tbody>";
+  state.positions.forEach((p,i)=>{ h+=`<tr><td><span class="tag" style="background:${p.color}">　</span></td>
+    <td><input type="text" value="${esc(p.name)}" onchange="updPos(${i},'name',this.value)"></td>
+    <td><input type="number" min="0" max="30" value="${p.required}" onchange="updPos(${i},'required',this.value)"></td>
+    <td><button class="btn-sm btn-danger" onclick="delPos(${i})">削除</button></td></tr>`; });
+  t.innerHTML=h+"</tbody>"; }
+function updPos(i,k,v){state.positions[i][k]=k==='required'?(parseInt(v)||0):v;persist();renderStaff();renderShift();updCounts();}
+function addPos(){const p=pos("新ポジション",1);p.color=PALETTE[state.positions.length%PALETTE.length];state.positions.push(p);renderMgr();}
+function delPos(i){const id=state.positions[i].id;state.positions.splice(i,1);state.staff.forEach(s=>s.positions=s.positions.filter(x=>x!==id));Object.values(state.shifts).forEach(sh=>{if(sh.pos===id)sh.pos=null;});renderMgr();}
+function posById(id){return state.positions.find(p=>p.id===id);}
+
+/* スタッフ */
+function renderStaff(){ const t=document.getElementById("staffTable"); const hasPos=state.positions.length>0;
+  let h="<thead><tr><th>社員番号</th><th>名前</th><th>時給</th><th>勤務可の曜日</th>"+(hasPos?"<th>できる役割</th>":"")+"<th>勤務パターン（早番/遅番）</th><th>週上限<br><small>(h)</small></th><th>連勤上限<br><small>(日)</small></th><th>従業員へのメモ<br><small>(本人に表示)</small></th><th></th></tr></thead><tbody>";
+  state.staff.forEach((s,idx)=>{
+    h+=`<tr><td><input type="text" value="${esc(s.empNo)}" style="width:62px" onchange="upd(${idx},'empNo',this.value)"></td>
+      <td><input type="text" value="${esc(s.name)}" onchange="upd(${idx},'name',this.value)"></td>
+      <td><input type="number" value="${s.wage}" min="0" step="10" onchange="upd(${idx},'wage',this.value)"></td>
+      <td><div class="daychk">${DOW.map((d,di)=>`<label class="${di===0?'wknd':di===6?'sat':''}">${d}<input type="checkbox" ${s.days[di]?'checked':''} onchange="updDay(${idx},${di},this.checked)"></label>`).join("")}</div></td>`;
+    if(hasPos) h+=`<td><div class="poschk">${state.positions.map(p=>`<label style="border-left:3px solid ${p.color}"><input type="checkbox" ${s.positions.includes(p.id)?'checked':''} onchange="updPosOf(${idx},'${p.id}',this.checked)">${esc(p.name)}</label>`).join("")}</div></td>`;
+    h+=`<td><div class="ptns">${s.patterns.map((p,pi)=>`<div class="ptn">
+        <input type="text" value="${esc(p.label)}" placeholder="名" onchange="updPtn(${idx},${pi},'label',this.value)">
+        <input type="time" value="${p.start}" onchange="updPtn(${idx},${pi},'start',this.value)">～
+        <input type="time" value="${p.end}" onchange="updPtn(${idx},${pi},'end',this.value)">
+        <button class="x" onclick="delPtn(${idx},${pi})" title="削除">×</button></div>`).join("")}
+        <button class="btn-sm btn-ghost" onclick="addPtn(${idx})" style="align-self:flex-start">+ パターン追加</button></div></td>
+      <td><input type="number" min="0" max="80" value="${s.maxWeek}" placeholder="${state.maxWeek}" style="width:58px" onchange="upd(${idx},'maxWeek',this.value)" title="空欄なら全体設定(${state.maxWeek}h)"></td>
+      <td><input type="number" min="1" max="14" value="${s.maxConsec}" placeholder="${state.maxConsec}" style="width:52px" onchange="upd(${idx},'maxConsec',this.value)" title="空欄なら全体設定(${state.maxConsec}日)"></td>
+      <td><input type="text" value="${esc(s.memo)}" placeholder="例：扶養内・週28hまで" style="width:170px" onchange="upd(${idx},'memo',this.value)"></td>
+      <td><button class="btn-sm btn-danger" onclick="delStaff(${idx})">削除</button></td></tr>`;
+  });
+  t.innerHTML=h+"</tbody>"; }
+function upd(i,k,v){state.staff[i][k]=k==='wage'?(parseInt(v)||0):v;persist();renderShift();renderSum();updCounts();}
+function updDay(i,di,v){state.staff[i].days[di]=v;persist();}
+function updPosOf(i,pid,v){const a=state.staff[i].positions;if(v){if(!a.includes(pid))a.push(pid);}else state.staff[i].positions=a.filter(x=>x!==pid);persist();}
+function updPtn(i,pi,k,v){state.staff[i].patterns[pi][k]=v;persist();renderShift();renderSum();}
+function addPtn(i){state.staff[i].patterns.push(ptn("",state.staff[i].patterns.length?"":"09:00","18:00"));persist();renderStaff();}
+function delPtn(i,pi){ if(state.staff[i].patterns.length<=1){alert("パターンは最低1つ必要です");return;} state.staff[i].patterns.splice(pi,1);persist();renderStaff();renderShift();renderSum();}
+function addStaff(){const w=state.staff.length?state.staff[0].wage:1100;const no=String(1001+state.staff.length);const s=stf("新規スタッフ",w,no,[ptn("A","09:00","18:00")]);s.positions=state.positions.map(p=>p.id);state.staff.push(s);renderMgr();}
+function delStaff(i){if(!confirm("削除しますか？"))return;const id=state.staff[i].id;state.staff.splice(i,1);Object.keys(state.shifts).forEach(k=>{if(k.startsWith(id+"_"))delete state.shifts[k];});renderMgr();}
+
+/* シフト表 */
+const key=(sid,d)=>sid+"_"+d;
+function renderShift(){ const t=document.getElementById("shiftTable"); const n=daysInMonth(); const warnCells=computeWarnings().cells;
+  let head="<thead><tr><th>スタッフ</th>";
+  for(let d=0;d<n;d++){const dt=dateOf(d);const w=dt.getDay();head+=`<th class="${w===0?'wknd':w===6?'sat':''}">${dt.getDate()}<br><small>(${DOW[w]})</small></th>`;}
+  head+="</tr></thead><tbody>"; let body="";
+  state.staff.forEach(s=>{ body+=`<tr><td class="staff-name">${esc(s.name)}<small>時給${s.wage.toLocaleString()}円</small></td>`;
+    for(let d=0;d<n;d++){ const w=dateOf(d).getDay(); const avail=s.days[w]; const cur=state.shifts[key(s.id,d)]; let cls="cell",txt="";
+      if(!avail&&!cur){cls+=" unavail";txt="—";}
+      else if(cur&&cur.state==='work'){cls+=" work"; const p=cur.pos?posById(cur.pos):null;
+        txt=(p?`<span class="tag" style="background:${p.color}">${esc(p.name)}</span>`:"")+(cur.label?`<span class="tag ptn">${esc(cur.label)}</span>`:"")+`<br>${cur.start}<br>～${cur.end}`;}
+      else if(cur&&cur.state==='off'){cls+=" off";txt="希望休";}
+      if(warnCells.has(key(s.id,d)))cls+=" warn";
+      body+=`<td class="${cls}" onclick="cycle('${s.id}',${d})">${txt}</td>`; }
+    body+="</tr>"; });
+  t.innerHTML=head+body+"</tbody>"; }
+function cycle(sid,d){ const k=key(sid,d),cur=state.shifts[k],s=state.staff.find(x=>x.id===sid);
+  const pats=(s.patterns&&s.patterns.length)?s.patterns:[FALLBACK];
+  const pos=(cur&&cur.pos)||s.positions[0]||null;
+  const setp=i=>{const p=pats[i]||pats[0];state.shifts[k]={state:'work',start:p.start,end:p.end,label:p.label,pos,pi:i};};
+  if(!cur) setp(0);                                   // 空き → 先頭パターン(A)
+  else if(cur.state==='work'){
+    let i;
+    if(cur.pi!=null&&cur.pi>=0) i=cur.pi;             // 記録された番号があればそれ
+    else { i=pats.findIndex(p=>p.start===cur.start&&p.end===cur.end); if(i<0)i=0; } // 旧データは時間から推測
+    if(i<pats.length-1) setp(i+1);                    // A → B → …（次のパターン）
+    else state.shifts[k]={state:'off'}; }             // 最後のパターンの次 → 休み
+  else delete state.shifts[k];                        // 休み → 空き
+  persist();renderShift();renderSum(); }
+function editCell(sid,d){ const k=key(sid,d),s=state.staff.find(x=>x.id===sid); let cur=state.shifts[k]; const fp=firstPtn(s);
+  if(!cur||cur.state!=='work')cur={state:'work',start:fp.start,end:fp.end,label:fp.label,pos:s.positions[0]||null};
+  // パターン選択
+  let chosen={...cur,pi:(cur.pi!=null?cur.pi:0)};
+  if(s.patterns.length>1){ const list=s.patterns.map((p,i)=>`${i+1}:${p.label||"(無名)"} ${p.start}-${p.end}`).join("\n");
+    const sel=prompt("勤務パターンの番号を選んでください\n"+list+"\n\n0=時間を手入力", "1"); if(sel===null)return;
+    const idx=parseInt(sel)-1;
+    if(idx>=0&&s.patterns[idx]){const p=s.patterns[idx];chosen={...chosen,start:p.start,end:p.end,label:p.label,pi:idx};}
+    else{const st=prompt("開始 (例 09:00)",cur.start);if(st===null)return;const en=prompt("終了 (例 18:00)",cur.end);if(en===null)return;chosen={...chosen,start:st,end:en,label:"",pi:null};}
+  }
+  // ポジション選択
+  let posId=chosen.pos;
+  if(state.positions.length){ const list=state.positions.map((p,i)=>`${i+1}:${p.name}`).join("  ");
+    const sel=prompt("ポジション番号（空欄=なし）\n"+list, posId?state.positions.findIndex(p=>p.id===posId)+1:""); if(sel===null)return;
+    const idx=parseInt(sel)-1; posId=(idx>=0&&state.positions[idx])?state.positions[idx].id:null; }
+  state.shifts[k]={state:'work',start:chosen.start,end:chosen.end,label:chosen.label,pos:posId,pi:chosen.pi}; persist();renderShift();renderSum(); }
+
+/* 自動作成 */
+function autoMake(){ Object.keys(state.shifts).forEach(k=>{if(state.shifts[k].state==='work')delete state.shifts[k];});
+  const n=daysInMonth(); const assigned={},streak={},wkH={}; state.staff.forEach(s=>{assigned[s.id]=0;streak[s.id]=0;wkH[s.id]={};}); const usePos=state.positions.length>0;
+  for(let d=0;d<n;d++){ const w=dateOf(d).getDay(); const wid=weekId(dateOf(d)); const worked=new Set();
+    const ok=s=>{ if(!s.days[w])return false; if(state.shifts[key(s.id,d)]&&state.shifts[key(s.id,d)].state==='off')return false;
+      if(streak[s.id]>=effConsec(s))return false; const fp=firstPtn(s);
+      if((wkH[s.id][wid]||0)+hours(fp.start,fp.end)>effWeek(s))return false; return true; };
+    const place=(s,pid)=>{const fp=firstPtn(s);const hh=hours(fp.start,fp.end);state.shifts[key(s.id,d)]={state:'work',start:fp.start,end:fp.end,label:fp.label,pos:pid,pi:0};assigned[s.id]+=hh;wkH[s.id][wid]=(wkH[s.id][wid]||0)+hh;worked.add(s.id);};
+    if(usePos){ state.positions.forEach(p=>{ let c=state.staff.filter(s=>ok(s)&&!worked.has(s.id)&&s.positions.includes(p.id)); c.sort((a,b)=>assigned[a.id]-assigned[b.id]); for(let i=0;i<p.required&&i<c.length;i++)place(c[i],p.id); }); }
+    else { let c=state.staff.filter(ok); c.sort((a,b)=>assigned[a.id]-assigned[b.id]); for(let i=0;i<state.required&&i<c.length;i++)place(c[i],null); }
+    state.staff.forEach(s=>{streak[s.id]=worked.has(s.id)?streak[s.id]+1:0;});
+  }
+  persist();renderShift();renderSum(); }
+
+/* 上限チェック */
+function computeWarnings(){ const n=daysInMonth(); const cells=new Set(),msgs=[];
+  state.staff.forEach(s=>{ const mc=effConsec(s),mw=effWeek(s); let st=0;
+    for(let d=0;d<n;d++){const c=state.shifts[key(s.id,d)];const work=c&&c.state==='work';if(work){st++;if(st>mc)cells.add(key(s.id,d));}else st=0;}
+    if([...Array(n).keys()].some(d=>cells.has(key(s.id,d))))msgs.push(`${s.name}：連続勤務が${mc}日を超過`);
+    const wk={}; for(let d=0;d<n;d++){const c=state.shifts[key(s.id,d)];if(c&&c.state==='work'){const id=weekId(dateOf(d));wk[id]=(wk[id]||0)+hours(c.start,c.end);}}
+    Object.entries(wk).forEach(([id,h])=>{if(h>mw)msgs.push(`${s.name}：${id}が${h.toFixed(1)}h（上限${mw}h超）`);});
+  }); return {cells,msgs}; }
+function weekId(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return `${d.getMonth()+1}/${d.getDate()}週`;}
+function renderWarn(){ const {msgs}=computeWarnings(); const a=document.getElementById("warnArea");
+  if(!msgs.length){a.innerHTML=`<div class="okbox">✅ 上限オーバーなし（個別設定を優先、未設定者は既定 連勤${state.maxConsec}日／週${state.maxWeek}h）</div>`;return;}
+  a.innerHTML=`<div class="warnbox"><b>⚠ 上限チェック警告（${msgs.length}件）</b><ul>${msgs.map(m=>`<li>${esc(m)}</li>`).join("")}</ul></div>`; }
+
+/* 集計 */
+function hours(st,en){if(!st||!en)return 0;const[a,b]=st.split(":").map(Number),[c,e]=en.split(":").map(Number);let m=(c*60+e)-(a*60+b);if(m<0)m+=1440;m-=state.brk;if(m<0)m=0;return m/60;}
+function renderSum(){ renderWarn(); const t=document.getElementById("sumTable"); const n=daysInMonth();
+  let h="<thead><tr><th>スタッフ</th><th>勤務日数</th><th>実働合計</th><th>時給</th><th>人件費</th></tr></thead><tbody>"; let tH=0,tY=0,tD=0;
+  state.staff.forEach(s=>{let hh=0,dd=0;for(let d=0;d<n;d++){const c=state.shifts[key(s.id,d)];if(c&&c.state==='work'){hh+=hours(c.start,c.end);dd++;}}
+    const y=Math.round(hh*s.wage);tH+=hh;tY+=y;tD+=dd;
+    h+=`<tr><td class="staff-name">${esc(s.name)}</td><td>${dd}日</td><td><b>${hh.toFixed(1)}h</b></td><td>${s.wage.toLocaleString()}円</td><td class="money">${y.toLocaleString()}円</td></tr>`;});
+  h+=`<tr class="grand"><td>合計</td><td>${tD}日</td><td>${tH.toFixed(1)}h</td><td>—</td><td class="money">${tY.toLocaleString()}円</td></tr>`;
+  t.innerHTML=h+"</tbody>"; }
+
+/* 従業員モード */
+function setMode(m){ mode=m;
+  document.getElementById("mMgr").classList.toggle("on",m==='mgr'); document.getElementById("mEmp").classList.toggle("on",m==='emp');
+  document.getElementById("managerView").style.display=m==='mgr'?'':'none'; document.getElementById("empView").style.display=m==='emp'?'':'none';
+  if(m==='emp')empLogout(); if(m==='mgr')renderMgr(); }
+function empLogin(){ const no=document.getElementById("empNoInput").value.trim(); const s=state.staff.find(x=>String(x.empNo)===no);
+  if(!s){document.getElementById("loginErr").textContent="社員番号が見つかりません。店長に確認してください。";return;}
+  empStaffId=s.id; document.getElementById("loginErr").textContent="";
+  document.getElementById("empLogin").style.display="none"; document.getElementById("empMain").style.display="";
+  document.getElementById("empWho").textContent=`${s.name} さん`; document.getElementById("empMonth").textContent=`${ymText(state.ym)} の希望休`;
+  document.getElementById("empMsg").textContent=""; empReload(); }
+function empLogout(){ empStaffId=null;empSel=new Set(); document.getElementById("empNoInput").value=""; document.getElementById("loginErr").textContent="";
+  document.getElementById("empLogin").style.display=""; document.getElementById("empMain").style.display="none"; }
+function empReload(){ empSel=new Set(); const n=daysInMonth(); for(let d=0;d<n;d++){const c=state.shifts[key(empStaffId,d)];if(c&&c.state==='off')empSel.add(d+1);} renderEmpCal(); renderEmpInfo(); }
+function renderEmpInfo(){ const s=state.staff.find(x=>x.id===empStaffId); if(!s)return; const n=daysInMonth();
+  let hh=0,dd=0,maxWk=0; const wk={};
+  for(let d=0;d<n;d++){const c=state.shifts[key(s.id,d)];if(c&&c.state==='work'){const h=hours(c.start,c.end);hh+=h;dd++;const id=weekId(dateOf(d));wk[id]=(wk[id]||0)+h;}}
+  Object.values(wk).forEach(v=>{if(v>maxWk)maxWk=v;});
+  const mw=effWeek(s),mc=effConsec(s);
+  const wkDef=(s.maxWeek===""||s.maxWeek==null)?"（店舗の既定）":"";
+  const mcDef=(s.maxConsec===""||s.maxConsec==null)?"（店舗の既定）":"";
+  const over=maxWk>mw?`<span class="near">（一番多い週は${maxWk.toFixed(1)}h＝上限オーバー！店長に相談を）</span>`:(maxWk>=mw*0.9&&mw>0?`<span class="near">（一番多い週は${maxWk.toFixed(1)}hで上限間近）</span>`:"");
+  let html=`<div class="empinfo">
+    <div>📅 ${ymText(state.ym)}の勤務予定：<span class="big">${dd}日 ・ 合計${hh.toFixed(1)}h</span></div>
+    <div style="margin-top:4px">⏱ あなたの上限：週 <b>${mw}h</b>${wkDef} ／ 連続勤務 <b>${mc}日</b>${mcDef} ${over}</div>`;
+  if(s.memo) html+=`<div class="memo">📝 店長からのメモ：${esc(s.memo)}</div>`;
+  html+=`<div class="fuyou">💡 ${esc(FUYOU)}</div></div>`;
+  document.getElementById("empInfo").innerHTML=html; }
+function renderEmpCal(){ const[y,m]=ymParts(state.ym);const first=new Date(y,m-1,1).getDay();const dim=new Date(y,m,0).getDate();
+  const cal=document.getElementById("empCal");let h="";DOW.forEach((d,i)=>h+=`<div class="h ${i===0?'wknd':i===6?'sat':''}">${d}</div>`);
+  for(let i=0;i<first;i++)h+=`<div class="d blank"></div>`; for(let day=1;day<=dim;day++)h+=`<div class="d${empSel.has(day)?' sel':''}" onclick="toggleEmp(${day})">${day}</div>`; cal.innerHTML=h; }
+function toggleEmp(day){if(empSel.has(day))empSel.delete(day);else empSel.add(day);renderEmpCal();}
+function empSubmit(){ if(!empStaffId)return; const n=daysInMonth();
+  for(let d=0;d<n;d++){const k=key(empStaffId,d);if(state.shifts[k]&&state.shifts[k].state==='off')delete state.shifts[k];}
+  empSel.forEach(day=>{state.shifts[key(empStaffId,day-1)]={state:'off'};}); persist();
+  document.getElementById("empMsg").innerHTML=`✅ 送信しました（希望休 ${empSel.size}日）。店長のシフト表に反映されました。`; }
+function empExportFile(){ if(!empStaffId)return; const s=state.staff.find(x=>x.id===empStaffId);
+  const data={type:"shift-request",name:s.name,empNo:s.empNo,ym:state.ym,offDays:[...empSel].sort((a,b)=>a-b)};
+  dl(new Blob([JSON.stringify(data)],{type:"application/json"}),`希望休_${s.name}_${state.ym}.json`); }
+
+/* 入出力 */
+function exportCSV(){ const n=daysInMonth();let rows=[];let head=["スタッフ"];
+  for(let d=0;d<n;d++){const dt=dateOf(d);head.push(`${dt.getDate()}(${DOW[dt.getDay()]})`);}head.push("実働(h)","人件費(円)");rows.push(head);
+  state.staff.forEach(s=>{let r=[s.name],hh=0;for(let d=0;d<n;d++){const c=state.shifts[key(s.id,d)];
+    if(c&&c.state==='work'){const p=c.pos?posById(c.pos):null;r.push((p?p.name+" ":"")+(c.label?c.label+" ":"")+`${c.start}-${c.end}`);hh+=hours(c.start,c.end);}
+    else if(c&&c.state==='off')r.push("希望休");else r.push("");}r.push(hh.toFixed(1),Math.round(hh*s.wage));rows.push(r);});
+  const csv="﻿"+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  dl(new Blob([csv],{type:"text/csv"}),`シフト表_${state.ym}.csv`); }
+function saveFile(){dl(new Blob([JSON.stringify(state)],{type:"application/json"}),`シフトデータ_${state.ym}.json`);}
+function loadFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(d.type==="shift-request"){const s=state.staff.find(x=>x.name===d.name||String(x.empNo)===String(d.empNo));
+      if(!s){alert("該当スタッフが未登録です: "+d.name);return;} if(d.ym!==state.ym){alert("対象月が違います（データ:"+d.ym+"）。先にその月へ切り替えてください。");return;}
+      const n=daysInMonth();for(let i=0;i<n;i++){const k=key(s.id,i);if(state.shifts[k]&&state.shifts[k].state==='off')delete state.shifts[k];}
+      d.offDays.forEach(day=>{state.shifts[key(s.id,day-1)]={state:'off'};});persist();renderMgr();alert(d.name+"さんの希望休を取り込みました");return;}
+    state=d;migrate();persist();renderMgr();alert("データを読み込みました");
+  }catch(err){alert("読み込めませんでした");}};r.readAsText(f);e.target.value="";}
+function dl(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* 描画 */
+function updCounts(){ document.getElementById("cfgCnt").textContent=`休憩${state.brk}分／必要${state.required}人`;
+  document.getElementById("posCnt").textContent=state.positions.length+"件"; document.getElementById("staffCnt").textContent=state.staff.length+"人"; }
+function renderMgr(){ document.getElementById("brk").value=state.brk; document.getElementById("required").value=state.required;
+  document.getElementById("maxWeek").value=state.maxWeek; document.getElementById("maxConsec").value=state.maxConsec;
+  renderPos(); renderStaff(); renderMonth(); updCounts(); persist(); }
+// 同じ端末の別タブ/別ウィンドウでの変更を即時反映（従業員の送信→店長画面が自動更新）
+window.addEventListener("storage",e=>{ if(e.key!=="shiftToolV4"||!e.newValue)return;
+  try{ state=JSON.parse(e.newValue); migrate(); }catch(err){ return; }
+  if(mode==='mgr') renderMgr(); else if(empStaffId) empReload(); });
+load(); renderMgr();
+</script>
+</body>
+</html>
