@@ -111,6 +111,8 @@
 <div class="wrap" id="managerView">
   <div class="toolbar no-print">
     <button class="btn btn-lg" onclick="autoMake()">⚡ 自動でシフトを作る</button>
+    <button class="btn-ghost" onclick="clearWork()">🗑 勤務を消去</button>
+    <button class="btn-ghost" onclick="clearAll()">🗑 全消去</button>
     <span style="flex:1"></span>
     <button class="btn-ghost" onclick="window.print()">🖨 印刷</button>
     <button class="btn-ghost" onclick="exportCSV()">CSV</button>
@@ -368,6 +370,12 @@ function autoMake(){ Object.keys(state.shifts).forEach(k=>{if(state.shifts[k].st
     state.staff.forEach(s=>{streak[s.id]=worked.has(s.id)?streak[s.id]+1:0;});
   }
   persist();renderShift();renderSum(); }
+
+/* 一括削除 */
+function clearWork(){ if(!confirm("勤務の割り当てを消去します（希望休は残します）。よろしいですか？"))return;
+  Object.keys(state.shifts).forEach(k=>{if(state.shifts[k].state==='work')delete state.shifts[k];}); persist(); renderShift(); renderSum(); }
+function clearAll(){ if(!confirm("入力済みのシフト（勤務・希望休すべて）を消去します。元に戻せません。よろしいですか？"))return;
+  state.shifts={}; persist(); renderShift(); renderSum(); }
 
 /* 上限チェック */
 function computeWarnings(){ const n=daysInMonth(); const cells=new Set(),msgs=[];
