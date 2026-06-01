@@ -243,7 +243,11 @@ function migrate(){ if(!state.positions)state.positions=[];
   state.staff.forEach((s,i)=>{ if(!s.positions)s.positions=[]; if(!s.empNo)s.empNo=String(1001+i);
     if(!s.patterns||!s.patterns.length)s.patterns=[ptn("A",s.start||"09:00",s.end||"18:00")];
     if(s.maxWeek===undefined)s.maxWeek=""; if(s.maxConsec===undefined)s.maxConsec=""; if(s.memo===undefined)s.memo=""; });
-  if(state.maxWeek==null)state.maxWeek=40; if(state.maxConsec==null)state.maxConsec=6; if(state.brk==null)state.brk=60; if(state.required==null)state.required=2; }
+  if(state.maxWeek==null)state.maxWeek=40; if(state.maxConsec==null)state.maxConsec=6; if(state.brk==null)state.brk=60; if(state.required==null)state.required=2;
+  // 旧形式のシフトキー(sid_d)を月スコープ(ym|sid|d)へ変換。旧データは保存時の対象月のものとして扱う
+  if(state.shifts){ const nw={}; Object.keys(state.shifts).forEach(k=>{ if(k.includes("|")){ nw[k]=state.shifts[k]; }
+    else{ const p=k.split("_"); const d=p.pop(); const sid=p.join("_"); nw[(state.ym||thisMonth())+"|"+sid+"|"+d]=state.shifts[k]; } });
+    state.shifts=nw; } }
 function persist(){ try{localStorage.setItem("shiftToolV4",JSON.stringify(state));}catch(e){} }
 
 function ymParts(ym){const[y,m]=ym.split("-").map(Number);return[y,m];}
@@ -309,10 +313,10 @@ function updPtn(i,pi,k,v){state.staff[i].patterns[pi][k]=v;persist();renderShift
 function addPtn(i){state.staff[i].patterns.push(ptn("",state.staff[i].patterns.length?"":"09:00","18:00"));persist();renderStaff();}
 function delPtn(i,pi){ if(state.staff[i].patterns.length<=1){alert("パターンは最低1つ必要です");return;} state.staff[i].patterns.splice(pi,1);persist();renderStaff();renderShift();renderSum();}
 function addStaff(){const w=state.staff.length?state.staff[0].wage:1100;const no=String(1001+state.staff.length);const s=stf("新規スタッフ",w,no,[ptn("A","09:00","18:00")]);s.positions=state.positions.map(p=>p.id);state.staff.push(s);renderMgr();}
-function delStaff(i){if(!confirm("削除しますか？"))return;const id=state.staff[i].id;state.staff.splice(i,1);Object.keys(state.shifts).forEach(k=>{if(k.startsWith(id+"_"))delete state.shifts[k];});renderMgr();}
+function delStaff(i){if(!confirm("削除しますか？"))return;const id=state.staff[i].id;state.staff.splice(i,1);Object.keys(state.shifts).forEach(k=>{if(k.split("|")[1]===id)delete state.shifts[k];});renderMgr();}
 
 /* シフト表 */
-const key=(sid,d)=>sid+"_"+d;
+const key=(sid,d)=>state.ym+"|"+sid+"|"+d;  // 月ごとに分離（ym|スタッフID|日index）
 function renderShift(){ const t=document.getElementById("shiftTable"); const n=daysInMonth(); const warnCells=computeWarnings().cells;
   let head="<thead><tr><th>スタッフ</th>";
   for(let d=0;d<n;d++){const dt=dateOf(d);const w=dt.getDay();head+=`<th class="${w===0?'wknd':w===6?'sat':''}">${dt.getDate()}<br><small>(${DOW[w]})</small></th>`;}
@@ -372,10 +376,10 @@ function autoMake(){ Object.keys(state.shifts).forEach(k=>{if(state.shifts[k].st
   persist();renderShift();renderSum(); }
 
 /* 一括削除 */
-function clearWork(){ if(!confirm("勤務の割り当てを消去します（希望休は残します）。よろしいですか？"))return;
-  Object.keys(state.shifts).forEach(k=>{if(state.shifts[k].state==='work')delete state.shifts[k];}); persist(); renderShift(); renderSum(); }
-function clearAll(){ if(!confirm("入力済みのシフト（勤務・希望休すべて）を消去します。元に戻せません。よろしいですか？"))return;
-  state.shifts={}; persist(); renderShift(); renderSum(); }
+function clearWork(){ if(!confirm(ymText(state.ym)+"の勤務の割り当てを消去します（希望休は残します）。よろしいですか？"))return;
+  const pre=state.ym+"|"; Object.keys(state.shifts).forEach(k=>{if(k.startsWith(pre)&&state.shifts[k].state==='work')delete state.shifts[k];}); persist(); renderShift(); renderSum(); }
+function clearAll(){ if(!confirm(ymText(state.ym)+"のシフト（勤務・希望休すべて）を消去します。元に戻せません。よろしいですか？"))return;
+  const pre=state.ym+"|"; Object.keys(state.shifts).forEach(k=>{if(k.startsWith(pre))delete state.shifts[k];}); persist(); renderShift(); renderSum(); }
 
 /* 上限チェック */
 function computeWarnings(){ const n=daysInMonth(); const cells=new Set(),msgs=[];
